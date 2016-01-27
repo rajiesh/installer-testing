@@ -1,0 +1,6 @@
+.vagrant
+*.deb
+*.rpm
+.tags
+.tags1
+version.json
