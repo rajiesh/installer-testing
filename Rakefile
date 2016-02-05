@@ -22,7 +22,7 @@ task :test_installers do
   version_json    = JSON.parse(File.read('version.json'))
   go_full_version = version_json['go_full_version']
 
-  ['ubuntu-12.04', 'ubuntu-14.04', 'centos-6', 'centos-7'].each do |box|
+  ['ubuntu-12.04', 'ubuntu-14.04', 'centos-7'].each do |box|
     begin
       sh "GO_VERSION=#{go_full_version} vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
     rescue => e

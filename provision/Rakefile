@@ -51,19 +51,19 @@ AUTH = Base64.encode64('user.admin:badger')
 
     task :initialize_config do
       sh(%(sed -i -e "s/^DAEMON=.*$/DAEMON=Y/" /etc/default/go-server))
-      sh('/bin/cp -rf /vagrant/filesystem/cruise-config.xml /etc/go/cruise-config.xml')
-      sh('/bin/cp -rf /vagrant/filesystem/passwd /etc/go/passwd')
+      cp_r '/vagrant/filesystem/cruise-config.xml', '/etc/go/cruise-config.xml', :remove_destination => true
+      cp_r '/vagrant/filesystem/passwd', '/etc/go/passwd', :remove_destination => true
 
       chown_R 'go', 'go', '/etc/go'
     end
 
     task :start do
-         sh('service go-server stop')
-         sh('service go-server start')
-         sh('service go-agent start')
+      sh('service go-server stop')
+      sh('service go-server start')
+      sh('service go-agent start')
 
       puts 'wait for server to come up'
-      sh('wget http://localhost:8153/go/about --waitretry=20 --retry-connrefused --quiet -O /dev/null')
+      sh('wget http://localhost:8153/go/about --waitretry=30 --retry-connrefused --quiet -O /dev/null')
 
       puts 'wait for agent to come up'
       Timeout.timeout(180) do
@@ -81,19 +81,20 @@ AUTH = Base64.encode64('user.admin:badger')
     task :create_pipeline do
       url = 'http://localhost:8153/go/api/admin/pipelines'
       puts 'create a pipeline'
-      sh("curl -sL -w \"%{http_code}\" -X POST -H \"Authorization: Basic dXNlci5hZG1pbjpiYWRnZXI=\" -H \"Accept: application/vnd.go.cd.v1+json\" -H \"Content-Type: application/json\" --data \"@/vagrant/filesystem/pipeline.json\" #{url} -o /dev/null")
+      sh(%Q{curl -sL -w "%{http_code}" -X POST -H "Authorization: Basic dXNlci5hZG1pbjpiYWRnZXI=" -H "Accept: application/vnd.go.cd.v1+json" -H "Content-Type: application/json" --data "@/vagrant/filesystem/pipeline.json" #{url} -o /dev/null})
     end
 
     task :trigger_pipeline do
       url = "http://localhost:8153/go/api/pipelines/#{PIPELINE_NAME}/unpause"
       puts 'unpause and trigger the pipeline'
-      sh("curl -sL -w \"%{http_code}\" -X POST -H \"Authorization: Basic dXNlci5hZG1pbjpiYWRnZXI=\" #{url} -o /dev/null")
+      sh(%Q{curl -sL -w "%{http_code}" -X POST -H "Authorization: Basic dXNlci5hZG1pbjpiYWRnZXI=" #{url} -o /dev/null})
     end
 
     task :check_pipeline_pass do
       begin
         timeout(180) do
           while(true) do
+            sleep 60
             runs = JSON.parse(open('http://localhost:8153/go/api/dashboard','Accept' => 'application/vnd.go.cd.v1+json','Authorization' => "Basic #{Base64.encode64('user.admin:badger')}").read)
 
             if runs["_embedded"]["pipeline_groups"][0]["_embedded"]["pipelines"][0]["_embedded"]["instances"][0]["_embedded"]["stages"][0]["status"]  == 'Passed'
@@ -111,7 +112,6 @@ AUTH = Base64.encode64('user.admin:badger')
          sh('service go-server stop')
          sh('service go-agent stop')
     end
-
 
     task :all => [:clean, :init, :download, :install, :initialize_config, :start, :create_pipeline, :trigger_pipeline, :check_pipeline_pass, :stop]
   end
