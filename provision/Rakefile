@@ -20,31 +20,52 @@ require 'json'
 
 PIPELINE_NAME = 'testpipeline'
 
+class Debian
+  include Rake::DSL
+  def repo
+    open('/etc/apt/sources.list.d/gocd.list', 'w') do |f|
+      f.puts('deb https://dl.go.cd/experimental /')
+    end
+    sh("curl --silent --fail https://dl.go.cd/GOCD-GPG-KEY.asc | apt-key add -")
+    sh("apt-get update")
+  end
+
+  def install(pkg_name, pkg_verion)
+    sh("apt-get install -y #{pkg_name}=#{pkg_verion}")
+  end
+end
+
+class Redhat
+  include Rake::DSL
+  def repo
+    open('/etc/yum.repos.d/gocd.repo', 'w') do |f|
+      f.puts('[gocd]')
+      f.puts('name=gocd')
+      f.puts('baseurl=https://dl.go.cd/experimental')
+      f.puts('enabled=1')
+      f.puts('gpgcheck=1')
+      f.puts('gpgkey=https://dl.go.cd/GOCD-GPG-KEY.asc')
+    end
+    sh("yum makecache --disablerepo='*' --enablerepo=gocd")
+  end
+
+  def install(pkg_name, pkg_verion)
+    sh("yum install --assumeyes #{pkg_name}-#{pkg_verion}")
+  end
+end
+
 {
-  'debian'     => { :prefix => 'deb', :install_command => 'dpkg -i' },
-  'centos'     => { :prefix => 'noarch.rpm', :install_command => 'rpm -i' },
-}.each do |os, meta|
+  'debian'     => Debian,
+  'centos'     => Redhat,
+}.each do |os, klass|
   namespace os do
-    task :clean do
-      rm_rf 'installer-testing'
-    end
-
-    task :init do
-      mkdir_p 'installer-testing'
-    end
-
-    task :download do
-      cd 'installer-testing' do
-        sh("wget -c https://download.go.cd/local/#{ENV['GO_VERSION']}/go-server-#{ENV['GO_VERSION']}.#{meta[:prefix]}")
-        sh("wget -c https://download.go.cd/local/#{ENV['GO_VERSION']}/go-agent-#{ENV['GO_VERSION']}.#{meta[:prefix]}")
-      end
+    task :repo do
+      klass.new.repo
     end
 
     task :install do
-      cd 'installer-testing' do
-        sh("#{meta[:install_command]} go-server-#{ENV['GO_VERSION']}.#{meta[:prefix]}")
-        sh("#{meta[:install_command]} go-agent-#{ENV['GO_VERSION']}.#{meta[:prefix]}")
-      end
+      klass.new.install('go-server', ENV['GO_VERSION'])
+      klass.new.install('go-agent', ENV['GO_VERSION'])
     end
 
     task :start do
@@ -97,10 +118,10 @@ PIPELINE_NAME = 'testpipeline'
     end
 
     task :stop do
-         sh('service go-server stop')
-         sh('service go-agent stop')
+      sh('service go-server stop')
+      sh('service go-agent stop')
     end
 
-    task :all => [:clean, :init, :download, :install, :start, :create_pipeline, :trigger_pipeline, :check_pipeline_pass, :stop]
+    task :all => [:repo, :install, :start, :create_pipeline, :trigger_pipeline, :check_pipeline_pass, :stop]
   end
 end
