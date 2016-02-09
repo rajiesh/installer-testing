@@ -21,7 +21,7 @@ require 'json'
 PIPELINE_NAME = 'testpipeline'
 
 class Debian
-  include Rake::DSL
+  include Rake::DSL if defined?(Rake::DSL)
   def repo
     open('/etc/apt/sources.list.d/gocd.list', 'w') do |f|
       f.puts('deb https://dl.go.cd/experimental /')
@@ -36,7 +36,7 @@ class Debian
 end
 
 class Redhat
-  include Rake::DSL
+  include Rake::DSL if defined?(Rake::DSL)
   def repo
     open('/etc/yum.repos.d/gocd.repo', 'w') do |f|
       f.puts('[gocd]')
