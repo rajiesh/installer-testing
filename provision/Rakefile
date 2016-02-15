@@ -21,12 +21,12 @@ require 'json'
 PIPELINE_NAME = 'testpipeline'
 
 class Debian
-  include Rake::DSL
+  include Rake::DSL if defined?(Rake::DSL)
   def repo
     open('/etc/apt/sources.list.d/gocd.list', 'w') do |f|
-      f.puts('deb https://dl.go.cd/experimental /')
+      f.puts('deb https://download.go.cd/experimental /')
     end
-    sh("curl --silent --fail https://dl.go.cd/GOCD-GPG-KEY.asc | apt-key add -")
+    sh("curl --silent --fail https://download.go.cd/GOCD-GPG-KEY.asc | apt-key add -")
     sh("apt-get update")
   end
 
@@ -36,15 +36,15 @@ class Debian
 end
 
 class Redhat
-  include Rake::DSL
+  include Rake::DSL if defined?(Rake::DSL)
   def repo
     open('/etc/yum.repos.d/gocd.repo', 'w') do |f|
       f.puts('[gocd]')
       f.puts('name=gocd')
-      f.puts('baseurl=https://dl.go.cd/experimental')
+      f.puts('baseurl=https://download.go.cd/experimental')
       f.puts('enabled=1')
       f.puts('gpgcheck=1')
-      f.puts('gpgkey=https://dl.go.cd/GOCD-GPG-KEY.asc')
+      f.puts('gpgkey=https://download.go.cd/GOCD-GPG-KEY.asc')
     end
     sh("yum makecache --disablerepo='*' --enablerepo=gocd")
   end
