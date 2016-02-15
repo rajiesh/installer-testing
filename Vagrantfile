@@ -17,10 +17,6 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-
-
 Vagrant.configure(2) do |config|
   boxes = {
     'ubuntu-12.04' => {virtualbox: 'boxcutter/ubuntu1204',  docker: 'ubuntu/precise'},
@@ -39,7 +35,8 @@ Vagrant.configure(2) do |config|
         vm_config.vm.provision "shell", inline: "cd /vagrant/provision && sudo GO_VERSION=#{ENV['GO_VERSION']} rake debian:all"
       elsif name =~ /centos/
         vm_config.vm.provision "shell", inline: "yum makecache"
-        vm_config.vm.provision "shell", inline: "yum install -y rubygem-rake ruby-json java-1.7.0-openjdk unzip git"
+        vm_config.vm.provision "shell", inline: "yum install -y epel-release"
+        vm_config.vm.provision "shell", inline: "yum install -y rubygem-rake rubygem-json java-1.7.0-openjdk unzip git"
         vm_config.vm.provision "shell", inline: "cd /vagrant/provision && sudo GO_VERSION=#{ENV['GO_VERSION']} rake centos:all"
       end
 
@@ -70,11 +67,11 @@ Vagrant.configure(2) do |config|
 #   if Vagrant.has_plugin?('vagrant-ohai')
 #    config.ohai.primary_nic = "eth1"
 #   end
-#  
-#   if Vagrant.has_plugin?('vagrant-cachier')
-#     config.cache.scope = :box
-#     config.cache.enable :apt
-#     config.cache.enable :apt_lists
-#     config.cache.enable :yum
-#   end
+  
+   if Vagrant.has_plugin?('vagrant-cachier')
+     config.cache.scope = :box
+     config.cache.enable :apt
+     config.cache.enable :apt_lists
+     config.cache.enable :yum
+   end
 end
