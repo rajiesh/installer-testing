@@ -17,10 +17,6 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-
-
 Vagrant.configure(2) do |config|
   boxes = {
     'ubuntu-12.04' => {virtualbox: 'boxcutter/ubuntu1204',  docker: 'ubuntu/precise'},
@@ -71,11 +67,11 @@ Vagrant.configure(2) do |config|
 #   if Vagrant.has_plugin?('vagrant-ohai')
 #    config.ohai.primary_nic = "eth1"
 #   end
-#  
-#   if Vagrant.has_plugin?('vagrant-cachier')
-#     config.cache.scope = :box
-#     config.cache.enable :apt
-#     config.cache.enable :apt_lists
-#     config.cache.enable :yum
-#   end
+  
+   if Vagrant.has_plugin?('vagrant-cachier')
+     config.cache.scope = :box
+     config.cache.enable :apt
+     config.cache.enable :apt_lists
+     config.cache.enable :yum
+   end
 end
