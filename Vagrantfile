@@ -32,12 +32,12 @@ Vagrant.configure(2) do |config|
       if name =~ /ubuntu/
         vm_config.vm.provision "shell", inline: "apt-get update"
         vm_config.vm.provision "shell", inline: "apt-get install -y rake ruby-json openjdk-7-jre unzip git"
-        vm_config.vm.provision "shell", inline: "cd /vagrant/provision && sudo GO_VERSION=#{ENV['GO_VERSION']} rake debian:all"
+        vm_config.vm.provision "shell", inline: "cd /vagrant/provision && sudo GO_VERSION=#{ENV['GO_VERSION']} rake debian:#{ENV['TEST'] || 'fresh'}"
       elsif name =~ /centos/
         vm_config.vm.provision "shell", inline: "yum makecache"
         vm_config.vm.provision "shell", inline: "yum install -y epel-release"
         vm_config.vm.provision "shell", inline: "yum install -y rubygem-rake rubygem-json java-1.7.0-openjdk unzip git"
-        vm_config.vm.provision "shell", inline: "cd /vagrant/provision && sudo GO_VERSION=#{ENV['GO_VERSION']} rake centos:all"
+        vm_config.vm.provision "shell", inline: "cd /vagrant/provision && sudo GO_VERSION=#{ENV['GO_VERSION']} rake centos:#{ENV['TEST'] || 'fresh'}"
       end
 
 
@@ -56,18 +56,18 @@ Vagrant.configure(2) do |config|
       end
     end
   end
-  
+
 #   if Vagrant.has_plugin?('vagrant-proxyconf')
 #     # use ip 10.0.2.2 for virtualbox
 #     config.proxy.http     = 'http://10.0.2.2:3128/'
 #     config.proxy.https    = 'http://10.0.2.2:3128/'
 #     config.proxy.no_proxy = 'localhost,127.0.0.1,172.16.18.1,172.16.38.21,10.0.2.2'
 #   end
-#  
+#
 #   if Vagrant.has_plugin?('vagrant-ohai')
 #    config.ohai.primary_nic = "eth1"
 #   end
-  
+
    if Vagrant.has_plugin?('vagrant-cachier')
      config.cache.scope = :box
      config.cache.enable :apt

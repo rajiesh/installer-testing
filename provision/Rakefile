@@ -17,6 +17,7 @@
 require 'open-uri'
 require 'timeout'
 require 'json'
+require 'net/http'
 
 PIPELINE_NAME = 'testpipeline'
 
@@ -24,6 +25,7 @@ class Debian
   include Rake::DSL if defined?(Rake::DSL)
   def repo
     open('/etc/apt/sources.list.d/gocd.list', 'w') do |f|
+      f.puts('deb https://download.go.cd /')
       f.puts('deb https://download.go.cd/experimental /')
     end
     sh("curl --silent --fail https://download.go.cd/GOCD-GPG-KEY.asc | apt-key add -")
@@ -33,24 +35,39 @@ class Debian
   def install(pkg_name, pkg_verion)
     sh("apt-get install -y #{pkg_name}=#{pkg_verion}")
   end
+
+  def uninstall(pkg_name, pkg_verion)
+    sh("apt-get purge -y #{pkg_name}=#{pkg_verion}")
+  end
 end
 
 class Redhat
   include Rake::DSL if defined?(Rake::DSL)
+
   def repo
     open('/etc/yum.repos.d/gocd.repo', 'w') do |f|
       f.puts('[gocd]')
       f.puts('name=gocd')
+      f.puts('baseurl=https://download.go.cd')
+      f.puts('enabled=1')
+      f.puts('gpgcheck=1')
+      f.puts('gpgkey=https://download.go.cd/GOCD-GPG-KEY.asc')
+      f.puts('[gocd-exp]')
+      f.puts('name=gocd-exp')
       f.puts('baseurl=https://download.go.cd/experimental')
       f.puts('enabled=1')
       f.puts('gpgcheck=1')
       f.puts('gpgkey=https://download.go.cd/GOCD-GPG-KEY.asc')
     end
-    sh("yum makecache --disablerepo='*' --enablerepo=gocd")
+    sh("yum makecache --disablerepo='*' --enablerepo='gocd*'")
   end
 
   def install(pkg_name, pkg_verion)
     sh("yum install --assumeyes #{pkg_name}-#{pkg_verion}")
+  end
+
+  def uninstall(pkg_name,pkg_verion)
+    sh("yum -e --assumeyes #{pkg_name}-#{pkg_verion}")
   end
 end
 
@@ -63,21 +80,41 @@ end
       klass.new.repo
     end
 
-    task :install do
-      klass.new.install('go-server', ENV['GO_VERSION'])
-      klass.new.install('go-agent', ENV['GO_VERSION'])
+    task :install_server do
+       klass.new.install('go-server', ENV['GO_VERSION'])
     end
 
-    task :start do
-      sh('service go-agent start')
+    task :install_agent do
+       klass.new.install('go-agent', ENV['GO_VERSION'])
+    end
 
+    task :install_latest_version => [:install_server, :install_agent]
+
+    task :install_old_version do
+      klass.new.install('go-server', ENV['GO_INITIAL_VERSION'])
+      klass.new.install('go-agent', ENV['GO_INITIAL_VERSION'])
+    end
+
+    task :start_agent do
+      sh('service go-agent start')
+    end
+
+    task :check_service_is_up do
+       service_status
+    end
+
+    task :check_service_is_up_again do
+       service_status
+    end
+
+    def service_status
       puts 'wait for server to come up'
-      sh('wget http://localhost:8153/go/about --waitretry=30 --retry-connrefused --quiet -O /dev/null')
+      sh('wget http://localhost:8153/go/about --waitretry=90 --retry-connrefused --quiet -O /dev/null')
 
       puts 'wait for agent to come up'
       Timeout.timeout(180) do
         loop do
-          agents = JSON.parse(open('http://localhost:8153/go/api/agents','Accept' => 'application/vnd.go.cd.v1+json').read)['_embedded']['agents']
+          agents = JSON.parse(open('http://localhost:8153/go/api/agents').read)
 
           if agents.any? { |a| a['status'] == 'Idle' }
             puts 'Agent is up'
@@ -93,13 +130,67 @@ end
       sh(%Q{curl -sL -w "%{http_code}" -X POST  -H "Accept: application/vnd.go.cd.v1+json" -H "Content-Type: application/json" --data "@/vagrant/filesystem/pipeline.json" #{url} -o /dev/null})
     end
 
-    task :trigger_pipeline do
+    task :create_pipeline_by_config do
+      create_pipeline
+    end
+
+    task :unpause_pipeline do
       url = "http://localhost:8153/go/api/pipelines/#{PIPELINE_NAME}/unpause"
-      puts 'unpause and trigger the pipeline'
+      puts 'unpause the pipeline'
       sh(%Q{curl -sL -w "%{http_code}" -X POST  #{url} -o /dev/null})
     end
 
-    task :check_pipeline_pass do
+    def trigger_pipeline
+      url = "http://localhost:8153/go/api/pipelines/#{PIPELINE_NAME}/schedule"
+      puts 'trigger the pipeline'
+      sh(%Q{curl -sL -w "%{http_code}" -X POST  #{url} -o /dev/null})
+    end
+
+    task :trigger_pipeline_first do
+      trigger_pipeline
+    end
+
+    task :trigger_pipeline_again do
+      trigger_pipeline
+    end
+
+    task :check_pipeline_pass_with_label_1 do
+       check_pipeline_in_cctray 1
+    end
+
+    task :check_pipeline_pass_with_label_2 do
+       check_pipeline_in_cctray 2
+    end
+
+    def create_pipeline
+      url = "http://localhost:8153/go/tab/admin/pipelines/#{PIPELINE_NAME}.json"
+      uri = URI(url)
+      request = Net::HTTP::Post.new(uri.path)
+      request.set_form_data({"scm" => "git", "url" => "https://github.com/agoyal-git/testrepo.git", "builder"=> "exec", "command" => "ls"})
+      response = Net::HTTP.start(uri.host,uri.port) do |http|
+        http.request(request)
+      end
+      puts "Successfully created pipeline" if response.is_a?(Net::HTTPCreated)
+      raise "Pipeline creation failed with error: #{response.body}" unless response.is_a?(Net::HTTPCreated)
+    end
+
+    def check_pipeline_in_cctray label
+      begin
+        timeout(180) do
+          while(true) do
+            response = open("http://localhost:8153/go/cctray.xml").read
+              if response.include? %Q(<Project name="#{PIPELINE_NAME} :: defaultStage" activity="Sleeping" lastBuildStatus="Success" lastBuildLabel="#{label}") then
+                puts "Pipeline completed successfully"
+                break
+              end
+          end
+        end
+      end
+      rescue Timeout::Error
+        raise "Pipeline was not built successfully. Wait timed out"
+    end
+
+    def check_pipeline_status
       begin
         timeout(180) do
           while(true) do
@@ -122,6 +213,47 @@ end
       sh('service go-agent stop')
     end
 
-    task :all => [:repo, :install, :start, :create_pipeline, :trigger_pipeline, :check_pipeline_pass, :stop]
+    task :uninstall do
+      klass.new.uninstall('go-server', ENV['GO_VERSION'])
+      klass.new.uninstall('go-agent', ENV['GO_VERSION'])
+      sh("rm -rf /etc/go")
+      sh("rm -rf /var/log/go-*")
+      sh("rm -rf /var/lib/go-*")
+      sh("rm -rf /var/default/go-*")
+    end
+
+    task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline, :unpause_pipeline, :check_pipeline_pass_with_label_1, :stop]
+    task :setup   => [:repo, :install_old_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
+    task :upgrade => [:setup, :install_server, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2, :stop, :uninstall]
+
+#['15.1.0-1863', '15.2.0-2248', '16.1.0-2855', '16.2.1-3027']
+    task :upgrade_test do
+      ['15.1.0-1863', '15.2.0-2248', '16.1.0-2855', '16.2.1-3027'].each do |version|
+        begin
+          ENV['GO_INITIAL_VERSION']=version
+          puts "upgrade test. Version FROM: #{ENV['GO_INITIAL_VERSION']} TO: #{ENV['GO_VERSION']}"
+          Rake::Task["#{os}:upgrade"].invoke
+        rescue => e
+          raise "Installer testing failed. Error message #{e.message}"
+        ensure
+          Rake::Task["#{os}:upgrade"].reenable
+          Rake::Task["#{os}:setup"].reenable
+          Rake::Task["#{os}:repo"].reenable
+          Rake::Task["#{os}:install_old_version"].reenable
+          Rake::Task["#{os}:start_agent"].reenable
+          Rake::Task["#{os}:check_service_is_up"].reenable
+          Rake::Task["#{os}:create_pipeline_by_config"].reenable
+          Rake::Task["#{os}:trigger_pipeline_first"].reenable
+          Rake::Task["#{os}:check_pipeline_pass_with_label_1"].reenable
+          Rake::Task["#{os}:install_server"].reenable
+          Rake::Task["#{os}:check_service_is_up_again"].reenable
+          Rake::Task["#{os}:trigger_pipeline_again"].reenable
+          Rake::Task["#{os}:check_pipeline_pass_with_label_2"].reenable
+          Rake::Task["#{os}:stop"].reenable
+          Rake::Task["#{os}:uninstall"].reenable
+        end
+      end
+    end
+
   end
 end
