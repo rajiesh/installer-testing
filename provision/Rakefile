@@ -131,7 +131,12 @@ end
     end
 
     task :create_pipeline_by_config do
-      create_pipeline
+      if ENV['GO_INITIAL_VERSION'] =~ /\A15/
+        create_pipeline
+      else
+        Rake::Task["#{os}:create_pipeline"].reenable
+        Rake::Task["#{os}:create_pipeline"].invoke
+      end
     end
 
     task :unpause_pipeline do
@@ -147,7 +152,12 @@ end
     end
 
     task :trigger_pipeline_first do
-      trigger_pipeline
+      if ENV['GO_INITIAL_VERSION'] =~ /\A15/
+        trigger_pipeline
+      else
+        Rake::Task["#{os}:unpause_pipeline"].reenable
+        Rake::Task["#{os}:unpause_pipeline"].invoke
+      end
     end
 
     task :trigger_pipeline_again do
