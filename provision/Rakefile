@@ -228,7 +228,7 @@ end
 
 #['15.1.0-1863', '15.2.0-2248', '16.1.0-2855', '16.2.1-3027']
     task :upgrade_test do
-      ['15.1.0-1863', '15.2.0-2248', '16.1.0-2855', '16.2.1-3027'].each do |version|
+      ['15.2.0-2248', '16.1.0-2855', '16.2.1-3027'].each do |version|
         begin
           ENV['GO_INITIAL_VERSION']=version
           puts "upgrade test. Version FROM: #{ENV['GO_INITIAL_VERSION']} TO: #{ENV['GO_VERSION']}"
