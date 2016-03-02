@@ -67,7 +67,7 @@ class Redhat
   end
 
   def uninstall(pkg_name,pkg_verion)
-    sh("yum -e --assumeyes #{pkg_name}-#{pkg_verion}")
+    sh("yum remove --assumeyes #{pkg_name}-#{pkg_verion}")
   end
 end
 
