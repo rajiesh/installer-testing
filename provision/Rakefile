@@ -148,7 +148,7 @@ end
     def trigger_pipeline
       url = "http://localhost:8153/go/api/pipelines/#{PIPELINE_NAME}/schedule"
       puts 'trigger the pipeline'
-      sh(%Q{curl -sL -w "%{http_code}" -X POST  #{url} -o /dev/null})
+      sh(%Q{curl -sL -w "%{http_code}" -X POST -H "Accept:application/vnd.go.cd.v1+text" #{url} -o /dev/null})
     end
 
     task :trigger_pipeline_first do
