@@ -229,7 +229,7 @@ end
       sh("rm -rf /etc/go")
       sh("rm -rf /var/log/go-*")
       sh("rm -rf /var/lib/go-*")
-      sh("rm -rf /var/default/go-*")
+      sh("rm -rf /etc/default/go-*")
     end
 
     task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline, :unpause_pipeline, :check_pipeline_pass_with_label_1, :stop]
