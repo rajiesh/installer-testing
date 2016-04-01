@@ -17,6 +17,10 @@
 require 'json'
 require 'timeout'
 require 'fileutils'
+require 'open-uri'
+require 'logger'
+
+RELEASES_JSON_URL = 'https://download.go.cd/experimental/releases.json'
 
 task :test_installers do
   version_json    = JSON.parse(File.read('version.json'))
@@ -35,8 +39,9 @@ task :test_installers do
 end
 
 task :test_installers_w_postgres do
-  version_json    = JSON.parse(File.read('version.json'))
-  go_full_version = version_json['go_full_version']
+  json = JSON.parse(open(RELEASES_JSON_URL).read)
+  version, release = json.sort {|a, b| a['go_full_version'] <=> b['go_full_version']}.last['go_full_version'].split('-')
+  go_full_version = "#{version}-#{release}"
 #['ubuntu-12.04', 'ubuntu-14.04', 'centos-6', 'centos-7']
   ['ubuntu-14.04', 'centos-7'].each do |box|
 
@@ -67,8 +72,9 @@ task :upgrade_tests do
 end
 
 task :upgrade_tests_w_postgres do
-  version_json    = JSON.parse(File.read('version.json'))
-  go_full_version = version_json['go_full_version']
+  json = JSON.parse(open(RELEASES_JSON_URL).read)
+  version, release = json.sort {|a, b| a['go_full_version'] <=> b['go_full_version']}.last['go_full_version'].split('-')
+  go_full_version = "#{version}-#{release}"
 
   ['ubuntu-14.04', 'centos-7'].each do |box|
       begin
