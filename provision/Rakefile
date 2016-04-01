@@ -39,6 +39,16 @@ class Debian
   def uninstall(pkg_name, pkg_verion)
     sh("apt-get purge -y #{pkg_name}=#{pkg_verion}")
   end
+
+  def setup_postgres()
+    sh("apt-get install -y postgresql-9.3")
+    sh("apt-get install -y postgresql-contrib-9.3")
+    sh(%Q{sudo -H -u postgres bash -c 'createdb -U postgres cruise'})
+    sh(%Q{sudo -H -u postgres bash -c 'sed -i 's/peer/md5/g' /etc/postgresql/9.3/main/pg_hba.conf'})
+    sh(%Q{sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"})
+    sh("/etc/init.d/postgresql restart")
+  end
+
 end
 
 class Redhat
@@ -69,6 +79,18 @@ class Redhat
   def uninstall(pkg_name,pkg_verion)
     sh("yum remove --assumeyes #{pkg_name}-#{pkg_verion}")
   end
+
+  def setup_postgres()
+    sh("yum install --assumeyes postgresql-server")
+    sh("yum install --assumeyes postgresql-contrib")
+    sh(%Q{sudo -H -u postgres bash -c 'initdb -D /var/lib/pgsql/data'})
+    sh("service postgresql start")
+    sh(%Q{sudo -H -u postgres bash -c 'sed -i 's/peer/md5/g' /var/lib/pgsql/data/pg_hba.conf'})
+    sh(%Q{sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"})
+    sh("service postgresql restart")
+    sh(%Q{sudo -H -u postgres bash -c 'createdb -U postgres cruise'})
+  end
+
 end
 
 {
@@ -76,6 +98,8 @@ end
   'centos'     => Redhat,
 }.each do |os, klass|
   namespace os do
+    @postgres_setup_done='No'
+
     task :repo do
       klass.new.repo
     end
@@ -95,6 +119,38 @@ end
       klass.new.install('go-agent', ENV['GO_INITIAL_VERSION'])
     end
 
+    task :setup_postgres_addon do
+      if ENV['USE_POSTGRES'] == 'yes'
+        p 'Setting up postgres addon'
+        sh('sleep 60')
+        sh('/etc/init.d/go-server stop')
+        if @postgres_setup_done == 'No'
+          klass.new.setup_postgres
+          @postgres_setup_done = 'Yes'
+        end
+        sh('sudo -H -u go bash -c \'echo "GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\"" >> /etc/default/go-server\'')
+        version_revision = ENV['GO_INITIAL_VERSION'] || ENV['GO_VERSION']
+        version = version_revision.split('-')[0]
+        sh(%Q{sudo -H -u go bash -c 'mkdir -p /var/lib/go-server/addons ; cp /vagrant/addons/go-postgresql-#{version}-* /var/lib/go-server/addons/'})
+        sh(%Q{sudo -H -u go bash -c 'echo "db.host=localhost"  >> /etc/go/postgresqldb.properties'})
+        sh(%Q{sudo -H -u go bash -c 'echo "db.port=5432"  >> /etc/go/postgresqldb.properties'})
+        sh(%Q{sudo -H -u go bash -c 'echo "db.name=cruise"  >> /etc/go/postgresqldb.properties'})
+        sh(%Q{sudo -H -u go bash -c 'echo "db.user=postgres"  >> /etc/go/postgresqldb.properties'})
+        sh(%Q{sudo -H -u go bash -c 'echo "db.password=postgres"  >> /etc/go/postgresqldb.properties'})
+        sh('/etc/init.d/go-server start')
+      else
+        p 'Continuing with h2 database'
+      end
+    end
+
+    task :change_postgres_addons_jar do
+      if ENV['USE_POSTGRES'] == 'yes'
+        version = ENV['GO_VERSION'].split('-')[0]
+        sh(%Q{sudo -H -u go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/go-postgresql-#{version}-* /var/lib/go-server/addons/'})
+        sh("/etc/init.d/go-server restart")
+      end
+    end
+
     task :start_agent do
       sh('service go-agent start')
     end
@@ -110,6 +166,19 @@ end
     def service_status
       puts 'wait for server to come up'
       sh('wget http://localhost:8153/go/about --waitretry=90 --retry-connrefused --quiet -O /dev/null')
+
+      # check if server startup with postgres only
+      if ENV['USE_POSTGRES'] == 'yes'
+        Timeout.timeout(120) do
+          loop do
+            if File.open('/var/log/go-server/go-server.log').lines.any?{|line| line.include?('Using connection configuration jdbc:postgresql://localhost:5432/cruise [User: postgres] [Password Encrypted: false]')}
+              p 'server up with postgres'
+              break
+            end
+          end
+        end
+      end
+
 
       puts 'wait for agent to come up'
       Timeout.timeout(180) do
@@ -232,11 +301,11 @@ end
       #sh("rm -rf /etc/default/go-*")
     end
 
-    task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline, :unpause_pipeline, :check_pipeline_pass_with_label_1, :stop]
-    task :setup   => [:repo, :install_old_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
-    task :upgrade => [:setup, :install_server, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2, :stop, :uninstall]
+    task :fresh => [:repo, :install_latest_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline, :unpause_pipeline, :check_pipeline_pass_with_label_1, :stop]
+    task :setup   => [:repo, :install_old_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
+    task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2, :stop, :uninstall]
 
-#['15.1.0-1863', '15.2.0-2248', '16.1.0-2855', '16.2.1-3027']
+#['15.2.0-2248', '16.1.0-2855', '16.2.1-3027']
     task :upgrade_test do
       ['15.2.0-2248', '16.1.0-2855', '16.2.1-3027'].each do |version|
         begin
@@ -250,12 +319,14 @@ end
           Rake::Task["#{os}:setup"].reenable
           Rake::Task["#{os}:repo"].reenable
           Rake::Task["#{os}:install_old_version"].reenable
+          Rake::Task["#{os}:setup_postgres_addon"].reenable
           Rake::Task["#{os}:start_agent"].reenable
           Rake::Task["#{os}:check_service_is_up"].reenable
           Rake::Task["#{os}:create_pipeline_by_config"].reenable
           Rake::Task["#{os}:trigger_pipeline_first"].reenable
           Rake::Task["#{os}:check_pipeline_pass_with_label_1"].reenable
           Rake::Task["#{os}:install_server"].reenable
+          Rake::Task["#{os}:change_postgres_addons_jar"].reenable
           Rake::Task["#{os}:check_service_is_up_again"].reenable
           Rake::Task["#{os}:trigger_pipeline_again"].reenable
           Rake::Task["#{os}:check_pipeline_pass_with_label_2"].reenable

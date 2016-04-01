@@ -34,6 +34,22 @@ task :test_installers do
   end
 end
 
+task :test_installers_w_postgres do
+  version_json    = JSON.parse(File.read('version.json'))
+  go_full_version = version_json['go_full_version']
+#['ubuntu-12.04', 'ubuntu-14.04', 'centos-6', 'centos-7']
+  ['ubuntu-14.04', 'centos-7'].each do |box|
+
+    begin
+      sh "GO_VERSION=#{go_full_version} USE_POSTGRES=yes vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
+    rescue => e
+      raise "Installer testing failed. Error message #{e.message}"
+    ensure
+      sh "vagrant destroy #{box} --force"
+    end
+  end
+end
+
 
 task :upgrade_tests do
   version_json    = JSON.parse(File.read('version.json'))
@@ -42,6 +58,21 @@ task :upgrade_tests do
   ['ubuntu-12.04', 'ubuntu-14.04', 'centos-6', 'centos-7'].each do |box|
       begin
         sh "GO_VERSION=#{go_full_version} TEST=upgrade_test vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
+      rescue => e
+        raise "Installer testing failed. Error message #{e.message}"
+      ensure
+        sh "vagrant destroy #{box} --force"
+      end
+  end
+end
+
+task :upgrade_tests_w_postgres do
+  version_json    = JSON.parse(File.read('version.json'))
+  go_full_version = version_json['go_full_version']
+
+  ['ubuntu-14.04', 'centos-7'].each do |box|
+      begin
+        sh "GO_VERSION=#{go_full_version} TEST=upgrade_test USE_POSTGRES=yes vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
       rescue => e
         raise "Installer testing failed. Error message #{e.message}"
       ensure
