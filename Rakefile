@@ -95,7 +95,6 @@ def get_addons
   myhash.each_with_index do |key, index|
     break if index == 4
     addons = JSON.parse(File.read('../released_addons/addon_builds.json'))
-    sh ("cd  addons")
     addons.each {|a|
       if (a['gocd_version'] == key['go_full_version'] && !File.exists?("addons/#{a['addons']['postgresql']}"))
         sh "curl -k -o addons/#{a['addons']['postgresql']} #{ENV['ADDON_DOWNLOAD_URL']}/#{a['gocd_version']}/#{a['addons']['postgresql']}"
