@@ -305,9 +305,9 @@ end
     task :fresh => [:repo, :install_latest_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline, :unpause_pipeline, :check_pipeline_pass_with_label_1, :stop]
     task :setup   => [:repo, :install_old_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
     task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2, :stop, :uninstall]
-
+#'16.2.1-3027', '16.3.0-3183', '16.4.0-3223'
     task :upgrade_test do
-      ['16.2.1-3027', '16.3.0-3183', '16.4.0-3223'].each do |version|
+      ['16.1.0-2855', '16.5.0-3305'].each do |version|
         begin
           ENV['GO_INITIAL_VERSION']=version
           puts "upgrade test. Version FROM: #{ENV['GO_INITIAL_VERSION']} TO: #{ENV['GO_VERSION']}"
