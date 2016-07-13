@@ -106,6 +106,7 @@ end
 
     task :install_server do
        klass.new.install('go-server', ENV['GO_VERSION'])
+       sh('service go-server start')
     end
 
     task :install_agent do
