@@ -45,14 +45,14 @@ Vagrant.configure(2) do |config|
         override.vm.box = box_cfg[:virtualbox]
         vb.gui    = ENV['GUI'] || false
         vb.memory = ((ENV['MEMORY'] || 4).to_f * 1024).to_i
-        vb.cpus   = 1
+        vb.cpus   = 4
       end
 
       vm_config.vm.provider :vmware_fusion do |vm, override|
         override.vm.box = box_cfg[:virtualbox]
         vm.gui    = ENV['GUI'] || false
         vm.memory = ((ENV['MEMORY'] || 4).to_f * 1024).to_i
-        vm.cpus   = 1
+        vm.cpus   = 4
       end
     end
   end
