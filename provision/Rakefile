@@ -185,9 +185,9 @@ end
       puts 'wait for agent to come up'
       Timeout.timeout(180) do
         loop do
-          agents = JSON.parse(open('http://localhost:8153/go/api/agents').read)
+          agents = JSON.parse(open('http://localhost:8153/go/api/agents', 'Accept' => 'application/vnd.go.cd.v2+json').read)['_embedded']['agents']
 
-          if agents.any? { |a| a['status'] == 'Idle' }
+          if agents.any? { |a| a['agent_state'] == 'Idle' }
             puts 'Agent is up'
             break
           end
