@@ -33,16 +33,16 @@ class Debian
   end
 
   def install(pkg_name, pkg_version)
-    sh("export DEBIAN_FRONTEND=noninteractive; apt-get install -y #{pkg_name}=#{pkg_version}")
+    sh("apt-get -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' install -y #{pkg_name}=#{pkg_version}")
   end
 
   def uninstall(pkg_name, pkg_version)
-    sh("export DEBIAN_FRONTEND=noninteractive; apt-get purge -y #{pkg_name}=#{pkg_version}")
+    sh("apt-get purge -y #{pkg_name}=#{pkg_version}")
   end
 
   def setup_postgres()
-    sh("export DEBIAN_FRONTEND=noninteractive; apt-get install -y postgresql-9.3")
-    sh("export DEBIAN_FRONTEND=noninteractive; apt-get install -y postgresql-contrib-9.3")
+    sh("apt-get install -y postgresql-9.3")
+    sh("apt-get install -y postgresql-contrib-9.3")
     sh(%Q{sudo -H -u postgres bash -c 'createdb -U postgres cruise'})
     sh(%Q{sudo -H -u postgres bash -c 'sed -i 's/peer/md5/g' /etc/postgresql/9.3/main/pg_hba.conf'})
     sh(%Q{sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"})
