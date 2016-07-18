@@ -33,7 +33,7 @@ task :test_installers do
     begin
       sh "GO_VERSION=#{go_full_version} vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
     rescue => e
-      failed_tests << "Installer testing failed. Error message: #{e.message}\n #{e.backtrace.join("\n")}"
+      failed_tests << "Installer testing failed for #{box}. Error message: #{e.message}\n #{e.backtrace.join("\n")}"
     ensure
       sh "vagrant destroy #{box} --force"
     end
@@ -71,7 +71,7 @@ task :upgrade_tests do
     begin
       sh "GO_VERSION=#{go_full_version} TEST=upgrade_test vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
     rescue => e
-      failed_tests << "Installer testing failed. Error message: #{e.message}\n #{e.backtrace.join("\n")}"
+      failed_tests << "Installer testing failed for #{box}. Error message: #{e.message}\n #{e.backtrace.join("\n")}"
     ensure
       sh "vagrant destroy #{box} --force"
     end
