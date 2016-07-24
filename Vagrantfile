@@ -31,12 +31,12 @@ Vagrant.configure(2) do |config|
 
       if name =~ /ubuntu/
         vm_config.vm.provision "shell", inline: "apt-get update"
-        vm_config.vm.provision "shell", inline: "apt-get install -y rake ruby-json openjdk-7-jre unzip git"
+        vm_config.vm.provision "shell", inline: "apt-get install --assumeyes --quiet rake ruby-json openjdk-7-jre unzip git"
         vm_config.vm.provision "shell", inline: "cd /vagrant/provision && sudo GO_VERSION=#{ENV['GO_VERSION']} USE_POSTGRES=#{ENV['USE_POSTGRES'] || 'No'} rake debian:#{ENV['TEST'] || 'fresh'}"
       elsif name =~ /centos/
         vm_config.vm.provision "shell", inline: "yum makecache"
-        vm_config.vm.provision "shell", inline: "yum install -y epel-release"
-        vm_config.vm.provision "shell", inline: "yum install -y rubygem-rake rubygem-json java-1.7.0-openjdk unzip git"
+        vm_config.vm.provision "shell", inline: "yum install --assume-yes --quiet epel-release"
+        vm_config.vm.provision "shell", inline: "yum install --assume-yes --quiet rubygem-rake rubygem-json java-1.7.0-openjdk unzip git"
         vm_config.vm.provision "shell", inline: "cd /vagrant/provision && sudo GO_VERSION=#{ENV['GO_VERSION']} USE_POSTGRES=#{ENV['USE_POSTGRES'] || 'No'} rake centos:#{ENV['TEST'] || 'fresh'}"
       end
 
