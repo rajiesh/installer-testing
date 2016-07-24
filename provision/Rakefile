@@ -175,7 +175,7 @@ end
       sh('wget http://localhost:8153/go/about --waitretry=90 --retry-connrefused --quiet -O /dev/null')
 
       # check if server startup with postgres only
-      if var
+      if USE_POSTGRES
         Timeout.timeout(120) do
           loop do
             if File.open('/var/log/go-server/go-server.log').lines.any? { |line| line.include?('Using connection configuration jdbc:postgresql://localhost:5432/cruise [User: postgres] [Password Encrypted: false]') }
