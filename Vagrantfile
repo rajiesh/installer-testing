@@ -31,7 +31,7 @@ Vagrant.configure(2) do |config|
 
       if name =~ /ubuntu/
         vm_config.vm.provision "shell", inline: "apt-get update --assume-yes"
-        vm_config.vm.provision "shell", inline: "apt-get install --assumeyes --quiet rake ruby-json openjdk-7-jre unzip git"
+        vm_config.vm.provision "shell", inline: "apt-get install --assume-yes --quiet rake ruby-json openjdk-7-jre unzip git"
         vm_config.vm.provision "shell", inline: "cd /vagrant/provision && sudo GO_VERSION=#{ENV['GO_VERSION']} USE_POSTGRES=#{ENV['USE_POSTGRES'] || 'No'} rake debian:#{ENV['TEST'] || 'fresh'}"
       elsif name =~ /centos/
         vm_config.vm.provision "shell", inline: "yum makecache"
