@@ -51,7 +51,7 @@ task :test_installers_w_postgres do
   ['ubuntu-14.04', 'centos-7'].each do |box|
 
     begin
-      sh "GO_VERSION=#{go_full_version} USE_POSTGRES=yes vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
+      sh "GO_VERSION=#{go_full_version} USE_POSTGRES=yes vagrant up #{box} --color --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
     rescue => e
       raise "Installer testing failed. Error message #{e.message}"
     ensure
@@ -69,7 +69,7 @@ task :upgrade_tests do
 
   ['ubuntu-12.04', 'ubuntu-14.04', 'centos-6', 'centos-7'].each do |box|
     begin
-      sh "GO_VERSION=#{go_full_version} TEST=upgrade_test vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
+      sh "GO_VERSION=#{go_full_version} TEST=upgrade_test vagrant up #{box} --color --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
     rescue => e
       failed_tests << "Installer testing failed for #{box}. Error message: #{e.message}\n #{e.backtrace.join("\n")}"
     ensure
@@ -89,7 +89,7 @@ task :upgrade_tests_w_postgres do
   get_addons
   ['ubuntu-14.04', 'centos-7'].each do |box|
     begin
-      sh "GO_VERSION=#{go_full_version} TEST=upgrade_test USE_POSTGRES=yes vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
+      sh "GO_VERSION=#{go_full_version} TEST=upgrade_test USE_POSTGRES=yes vagrant up #{box} --color --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
     rescue => e
       raise "Installer testing failed. Error message #{e.message}"
     ensure
