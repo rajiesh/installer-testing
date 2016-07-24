@@ -1,0 +1,15 @@
+# The main gocd repo
+[gocd]
+name=gocd
+baseurl=https://download.go.cd
+enabled=1
+gpgcheck=1
+gpgkey=https://download.go.cd/GOCD-GPG-KEY.asc
+
+# The gocd experimental repository
+[gocd-exp]
+name=gocd-exp
+baseurl=https://download.go.cd/experimental
+enabled=1
+gpgcheck=1
+gpgkey=https://download.go.cd/GOCD-GPG-KEY.asc
