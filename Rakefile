@@ -20,7 +20,7 @@ require 'fileutils'
 require 'open-uri'
 require 'logger'
 
-RELEASES_JSON_URL = 'https://download.go.cd/experimental/releases.json'
+RELEASES_JSON_URL        = 'https://download.go.cd/experimental/releases.json'
 STABLE_RELEASES_JSON_URL = 'https://download.go.cd/releases.json'
 
 task :test_installers do
@@ -45,9 +45,9 @@ task :test_installers do
 end
 
 task :test_installers_w_postgres do
-  json = JSON.parse(open(RELEASES_JSON_URL).read)
-  version, release = json.sort {|a, b| a['go_full_version'] <=> b['go_full_version']}.last['go_full_version'].split('-')
-  go_full_version = "#{version}-#{release}"
+  json             = JSON.parse(open(RELEASES_JSON_URL).read)
+  version, release = json.sort { |a, b| a['go_full_version'] <=> b['go_full_version'] }.last['go_full_version'].split('-')
+  go_full_version  = "#{version}-#{release}"
   ['ubuntu-14.04', 'centos-7'].each do |box|
 
     begin
@@ -83,29 +83,29 @@ task :upgrade_tests do
 end
 
 task :upgrade_tests_w_postgres do
-  json = JSON.parse(open(RELEASES_JSON_URL).read)
-  version, release = json.sort {|a, b| a['go_full_version'] <=> b['go_full_version']}.last['go_full_version'].split('-')
-  go_full_version = "#{version}-#{release}"
+  json             = JSON.parse(open(RELEASES_JSON_URL).read)
+  version, release = json.sort { |a, b| a['go_full_version'] <=> b['go_full_version'] }.last['go_full_version'].split('-')
+  go_full_version  = "#{version}-#{release}"
   get_addons
   ['ubuntu-14.04', 'centos-7'].each do |box|
-      begin
-        sh "GO_VERSION=#{go_full_version} TEST=upgrade_test USE_POSTGRES=yes vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
-      rescue => e
-        raise "Installer testing failed. Error message #{e.message}"
-      ensure
-        sh "vagrant destroy #{box} --force"
-      end
+    begin
+      sh "GO_VERSION=#{go_full_version} TEST=upgrade_test USE_POSTGRES=yes vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
+    rescue => e
+      raise "Installer testing failed. Error message #{e.message}"
+    ensure
+      sh "vagrant destroy #{box} --force"
+    end
   end
 end
 
 
 def get_addons
-  json = JSON.parse(open(STABLE_RELEASES_JSON_URL).read)
-  myhash = json.sort {|a, b| a['go_full_version'] <=> b['go_full_version']}.reverse
+  json   = JSON.parse(open(STABLE_RELEASES_JSON_URL).read)
+  myhash = json.sort { |a, b| a['go_full_version'] <=> b['go_full_version'] }.reverse
   myhash.each_with_index do |key, index|
     break if index == 4
     addons = JSON.parse(File.read('../released_addons/addon_builds.json'))
-    addons.each {|a|
+    addons.each { |a|
       if (a['gocd_version'] == key['go_full_version'] && !File.exists?("addons/#{a['addons']['postgresql']}"))
         sh "curl -k -o addons/#{a['addons']['postgresql']} #{ENV['ADDON_DOWNLOAD_URL']}/#{a['gocd_version']}/#{a['addons']['postgresql']}"
       end
