@@ -19,39 +19,34 @@ require 'timeout'
 require 'json'
 require 'net/http'
 
-PIPELINE_NAME      = 'testpipeline'
-GO_VERSION         = ENV['GO_VERSION']
-GO_INITIAL_VERSION = ENV['GO_INITIAL_VERSION']
-USE_POSTGRES       = ENV['USE_POSTGRES'] == 'yes'
+PIPELINE_NAME = 'testpipeline'
 
 class Debian
   include Rake::DSL if defined?(Rake::DSL)
-
   def repo
-    cp 'apt.gocd.list', '/etc/apt/sources.list.d/gocd.list'
-    sh('curl --silent --fail https://download.go.cd/GOCD-GPG-KEY.asc | apt-key add -')
-    sh('apt-get --quiet --quiet update')
-  end
-
-  def install(pkg_name, pkg_version)
-    sh("apt-get --quiet --assume-yes -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' install -y #{pkg_name}=#{pkg_version}")
-  end
-
-  def uninstall(pkg_name, pkg_version)
-    sh("apt-get --assume-yes purge #{pkg_name}=#{pkg_version}")
-  end
-
-  def setup_postgres
-    if File.exist?('/etc/postgresql/9.3/main/pg_hba.conf')
-      $stderr.puts 'It looks like postgres is already setup, continuing'
-      return
+    open('/etc/apt/sources.list.d/gocd.list', 'w') do |f|
+      f.puts('deb https://download.go.cd /')
+      f.puts('deb https://download.go.cd/experimental /')
     end
+    sh("curl --silent --fail https://download.go.cd/GOCD-GPG-KEY.asc | apt-key add -")
+    sh("apt-get update")
+  end
 
-    sh('apt-get --assume-yes --quiet install postgresql-9.3 postgresql-contrib-9.3')
+  def install(pkg_name, pkg_verion)
+    sh("apt-get install -y #{pkg_name}=#{pkg_verion}")
+  end
+
+  def uninstall(pkg_name, pkg_verion)
+    sh("apt-get purge -y #{pkg_name}=#{pkg_verion}")
+  end
+
+  def setup_postgres()
+    sh("apt-get install -y postgresql-9.3")
+    sh("apt-get install -y postgresql-contrib-9.3")
     sh(%Q{sudo -H -u postgres bash -c 'createdb -U postgres cruise'})
     sh(%Q{sudo -H -u postgres bash -c 'sed -i 's/peer/md5/g' /etc/postgresql/9.3/main/pg_hba.conf'})
     sh(%Q{sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"})
-    sh('/etc/init.d/postgresql restart')
+    sh("/etc/init.d/postgresql restart")
   end
 
 end
@@ -60,84 +55,89 @@ class Redhat
   include Rake::DSL if defined?(Rake::DSL)
 
   def repo
-    cp 'yum.gocd.repo', '/etc/yum.repos.d/gocd.repo'
-    sh("yum makecache --quiet --disablerepo='*' --enablerepo='gocd*'")
-  end
-
-  def install(pkg_name, pkg_version)
-    sh("yum install --quiet --assumeyes #{pkg_name}-#{pkg_version}")
-  end
-
-  def uninstall(pkg_name, pkg_version)
-    sh("yum remove --quiet --assumeyes #{pkg_name}-#{pkg_version}")
-  end
-
-  def setup_postgres
-    if File.exist?('/var/lib/pgsql/data/pg_hba.conf')
-      $stderr.puts 'It looks like postgres is already setup, continuing'
-      return
+    open('/etc/yum.repos.d/gocd.repo', 'w') do |f|
+      f.puts('[gocd]')
+      f.puts('name=gocd')
+      f.puts('baseurl=https://download.go.cd')
+      f.puts('enabled=1')
+      f.puts('gpgcheck=1')
+      f.puts('gpgkey=https://download.go.cd/GOCD-GPG-KEY.asc')
+      f.puts('[gocd-exp]')
+      f.puts('name=gocd-exp')
+      f.puts('baseurl=https://download.go.cd/experimental')
+      f.puts('enabled=1')
+      f.puts('gpgcheck=1')
+      f.puts('gpgkey=https://download.go.cd/GOCD-GPG-KEY.asc')
     end
+    sh("yum makecache --disablerepo='*' --enablerepo='gocd*'")
+  end
 
-    sh('yum install --quiet --assumeyes postgresql-server postgresql-contrib')
+  def install(pkg_name, pkg_verion)
+    sh("yum install --assumeyes #{pkg_name}-#{pkg_verion}")
+  end
+
+  def uninstall(pkg_name,pkg_verion)
+    sh("yum remove --assumeyes #{pkg_name}-#{pkg_verion}")
+  end
+
+  def setup_postgres()
+    sh("yum install --assumeyes postgresql-server")
+    sh("yum install --assumeyes postgresql-contrib")
     sh(%Q{sudo -H -u postgres bash -c 'initdb -D /var/lib/pgsql/data'})
-    sh('service postgresql start')
+    sh("service postgresql start")
     sh(%Q{sudo -H -u postgres bash -c 'sed -i 's/peer/md5/g' /var/lib/pgsql/data/pg_hba.conf'})
     sh(%Q{sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"})
-    sh('service postgresql restart')
+    sh("service postgresql restart")
     sh(%Q{sudo -H -u postgres bash -c 'createdb -U postgres cruise'})
   end
+
 end
 
 {
-  'debian' => Debian,
-  'centos' => Redhat,
+  'debian'     => Debian,
+  'centos'     => Redhat,
 }.each do |os, klass|
   namespace os do
+    @postgres_setup_done='No'
+
     task :repo do
       klass.new.repo
     end
 
     task :install_server do
-      klass.new.install('go-server', GO_VERSION)
-      sh('service go-server start')
+       klass.new.install('go-server', ENV['GO_VERSION'])
+       sh('service go-server start')
     end
 
     task :install_agent do
-      klass.new.install('go-agent', GO_VERSION)
+       klass.new.install('go-agent', ENV['GO_VERSION'])
     end
 
     task :install_latest_version => [:install_server, :install_agent]
 
     task :install_old_version do
-      klass.new.install('go-server', GO_INITIAL_VERSION)
-      klass.new.install('go-agent', GO_INITIAL_VERSION)
+      klass.new.install('go-server', ENV['GO_INITIAL_VERSION'])
+      klass.new.install('go-agent', ENV['GO_INITIAL_VERSION'])
     end
 
     task :setup_postgres_addon do
-      if USE_POSTGRES
+      if ENV['USE_POSTGRES'] == 'yes'
         p 'Setting up postgres addon'
         sh('sleep 60')
         sh('/etc/init.d/go-server stop')
-        klass.new.setup_postgres
-
-        if File.read('/etc/default/go-server') =~ /postgres/
-          $stderr.puts 'Postgres configuration is already present in /etc/default/go-server, skipping'
-        else
-          $stderr.puts 'Postgres configuration is not present in /etc/default/go-server, adding'
-          open('/etc/default/go-server', 'a') do |f|
-            f.puts
-            f.puts '# Use the postgres DB provider instead of h2'
-            f.puts 'GO_SERVER_SYSTEM_PROPERTIES=-Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase'
-          end
+        if @postgres_setup_done == 'No'
+          klass.new.setup_postgres
+          @postgres_setup_done = 'Yes'
         end
-        version_revision = GO_INITIAL_VERSION || GO_VERSION
-        version          = version_revision.split('-')[0][0, 4]
-
-        cp 'postgresqldb.properties', '/etc/go/postgresqldb.properties'
-        mkdir_p '/var/lib/go-server/addons'
-        cp Dir["/vagrant/addons/go-postgresql-#{version}*.jar"].first, '/var/lib/go-server/addons'
-
-        chown_r 'go', 'go', ['/var/lib/go-server/addons', '/etc/go/postgresqldb.properties']
+        sh('sudo -H -u go bash -c \'echo "GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\"" >> /etc/default/go-server\'')
+        version_revision = ENV['GO_INITIAL_VERSION'] || ENV['GO_VERSION']
+        version = version_revision.split('-')[0][0,4]
+        sh(%Q{sudo -H -u go bash -c 'mkdir -p /var/lib/go-server/addons ; cp /vagrant/addons/go-postgresql-#{version}.* /var/lib/go-server/addons/'})
+        sh(%Q{sudo -H -u go bash -c 'echo "db.host=localhost"  >> /etc/go/postgresqldb.properties'})
+        sh(%Q{sudo -H -u go bash -c 'echo "db.port=5432"  >> /etc/go/postgresqldb.properties'})
+        sh(%Q{sudo -H -u go bash -c 'echo "db.name=cruise"  >> /etc/go/postgresqldb.properties'})
+        sh(%Q{sudo -H -u go bash -c 'echo "db.user=postgres"  >> /etc/go/postgresqldb.properties'})
+        sh(%Q{sudo -H -u go bash -c 'echo "db.password=postgres"  >> /etc/go/postgresqldb.properties'})
         sh('/etc/init.d/go-server start')
       else
         p 'Continuing with h2 database'
@@ -145,13 +145,11 @@ end
     end
 
     task :change_postgres_addons_jar do
-      if USE_POSTGRES
-        revision = GO_INITIAL_VERSION || GO_VERSION
-        version  = revision.split('-')[0][0, 4]
-        rm_rf Dir["/var/lib/go-server/addons/*.jar"]
-        cp Dir["/vagrant/addons/go-postgresql-#{version}*.jar"], '/var/lib/go-server/addons'
-        chown_r 'go', 'go', '/var/lib/go-server/addons'
-        sh('/etc/init.d/go-server restart')
+      if ENV['USE_POSTGRES'] == 'yes'
+        revision = ENV['GO_INITIAL_VERSION'] || ENV['GO_VERSION']
+        version = revision.split('-')[0][0,4]
+        sh(%Q{sudo -H -u go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/go-postgresql-#{version}.* /var/lib/go-server/addons/'})
+        sh("/etc/init.d/go-server restart")
       end
     end
 
@@ -160,11 +158,11 @@ end
     end
 
     task :check_service_is_up do
-      service_status
+       service_status
     end
 
     task :check_service_is_up_again do
-      service_status
+       service_status
     end
 
     def service_status
@@ -172,10 +170,10 @@ end
       sh('wget http://localhost:8153/go/about --waitretry=90 --retry-connrefused --quiet -O /dev/null')
 
       # check if server startup with postgres only
-      if USE_POSTGRES
+      if ENV['USE_POSTGRES'] == 'yes'
         Timeout.timeout(120) do
           loop do
-            if File.open('/var/log/go-server/go-server.log').lines.any? { |line| line.include?('Using connection configuration jdbc:postgresql://localhost:5432/cruise [User: postgres] [Password Encrypted: false]') }
+            if File.open('/var/log/go-server/go-server.log').lines.any?{|line| line.include?('Using connection configuration jdbc:postgresql://localhost:5432/cruise [User: postgres] [Password Encrypted: false]')}
               p 'server up with postgres'
               break
             end
@@ -204,7 +202,7 @@ end
     end
 
     task :create_pipeline_by_config do
-      if GO_INITIAL_VERSION =~ /\A15/
+      if ENV['GO_INITIAL_VERSION'] =~ /\A15/
         create_pipeline
       else
         Rake::Task["#{os}:create_pipeline"].reenable
@@ -225,7 +223,7 @@ end
     end
 
     task :trigger_pipeline_first do
-      if GO_INITIAL_VERSION =~ /\A15/
+      if ENV['GO_INITIAL_VERSION'] =~ /\A15/
         trigger_pipeline
       else
         Rake::Task["#{os}:unpause_pipeline"].reenable
@@ -238,49 +236,49 @@ end
     end
 
     task :check_pipeline_pass_with_label_1 do
-      check_pipeline_in_cctray 1
+       check_pipeline_in_cctray 1
     end
 
     task :check_pipeline_pass_with_label_2 do
-      check_pipeline_in_cctray 2
+       check_pipeline_in_cctray 2
     end
 
     def create_pipeline
-      url     = "http://localhost:8153/go/tab/admin/pipelines/#{PIPELINE_NAME}.json"
-      uri     = URI(url)
+      url = "http://localhost:8153/go/tab/admin/pipelines/#{PIPELINE_NAME}.json"
+      uri = URI(url)
       request = Net::HTTP::Post.new(uri.path)
-      request.set_form_data({ 'scm' => 'git', 'url' => 'https://github.com/agoyal-git/testrepo.git', 'builder' => 'exec', 'command' => 'ls' })
-      response = Net::HTTP.start(uri.host, uri.port) do |http|
+      request.set_form_data({"scm" => "git", "url" => "https://github.com/agoyal-git/testrepo.git", "builder"=> "exec", "command" => "ls"})
+      response = Net::HTTP.start(uri.host,uri.port) do |http|
         http.request(request)
       end
-      puts 'Successfully created pipeline' if response.is_a?(Net::HTTPCreated)
+      puts "Successfully created pipeline" if response.is_a?(Net::HTTPCreated)
       raise "Pipeline creation failed with error: #{response.body}" unless response.is_a?(Net::HTTPCreated)
     end
 
     def check_pipeline_in_cctray label
       begin
         timeout(180) do
-          while true do
-            response = open('http://localhost:8153/go/cctray.xml').read
-            if response.include? %Q(<Project name="#{PIPELINE_NAME} :: defaultStage" activity="Sleeping" lastBuildStatus="Success" lastBuildLabel="#{label}") then
-              puts 'Pipeline completed successfully'
-              break
-            end
+          while(true) do
+            response = open("http://localhost:8153/go/cctray.xml").read
+              if response.include? %Q(<Project name="#{PIPELINE_NAME} :: defaultStage" activity="Sleeping" lastBuildStatus="Success" lastBuildLabel="#{label}") then
+                puts "Pipeline completed successfully"
+                break
+              end
           end
         end
       end
-    rescue Timeout::Error
-      raise 'Pipeline was not built successfully. Wait timed out'
+      rescue Timeout::Error
+        raise "Pipeline was not built successfully. Wait timed out"
     end
 
     def check_pipeline_status
       begin
         timeout(180) do
-          while true do
+          while(true) do
             sleep 60
-            runs = JSON.parse(open('http://localhost:8153/go/api/dashboard', 'Accept' => 'application/vnd.go.cd.v1+json').read)
+            runs = JSON.parse(open('http://localhost:8153/go/api/dashboard','Accept' => 'application/vnd.go.cd.v1+json').read)
 
-            if runs['_embedded']['pipeline_groups'][0]['_embedded']['pipelines'][0]['_embedded']['instances'][0]['_embedded']['stages'][0]['status'] == 'Passed'
+            if runs["_embedded"]["pipeline_groups"][0]["_embedded"]["pipelines"][0]["_embedded"]["instances"][0]["_embedded"]["stages"][0]["status"]  == 'Passed'
               puts 'Pipeline completed with success'
               break
             end
@@ -297,22 +295,23 @@ end
     end
 
     task :uninstall do
-      klass.new.uninstall('go-server', GO_VERSION)
-      klass.new.uninstall('go-agent', GO_VERSION)
-      %W(/etc/go /var/log/go-{agent,server} /var/lib/go-{agent,server} /etc/default/go-{agent,server}).each do |glob|
-        matching_dirs = Dir.glob(glob)
-        rm_rf(matching_dirs) unless matching_dirs.empty?
-      end
+      klass.new.uninstall('go-server', ENV['GO_VERSION'])
+      klass.new.uninstall('go-agent', ENV['GO_VERSION'])
+      sh("rm -rf /etc/go")
+      sh("rm -rf /var/log/go-*")
+      sh("rm -rf /var/lib/go-*")
+      #sh("rm -rf /etc/default/go-*")
     end
 
     task :fresh => [:repo, :install_latest_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline, :unpause_pipeline, :check_pipeline_pass_with_label_1, :stop]
-    task :setup => [:repo, :install_old_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
+    task :setup   => [:repo, :install_old_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
     task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2, :stop, :uninstall]
+#'16.2.1-3027', '16.3.0-3183', '16.4.0-3223'
     task :upgrade_test do
       ['16.1.0-2855', '16.3.0-3183', '16.5.0-3305'].each do |version|
         begin
-          GO_INITIAL_VERSION=version
-          puts "upgrade test. Version FROM: #{GO_INITIAL_VERSION} TO: #{GO_VERSION}"
+          ENV['GO_INITIAL_VERSION']=version
+          puts "upgrade test. Version FROM: #{ENV['GO_INITIAL_VERSION']} TO: #{ENV['GO_VERSION']}"
           Rake::Task["#{os}:upgrade"].invoke
         rescue => e
           raise "Installer testing failed. Error message #{e.message}"

@@ -19,10 +19,10 @@
 
 Vagrant.configure(2) do |config|
   boxes = {
-    'ubuntu-12.04' => { virtualbox: 'boxcutter/ubuntu1204', docker: 'ubuntu/precise' },
-    'ubuntu-14.04' => { virtualbox: 'boxcutter/ubuntu1404', docker: 'ubuntu/trusty' },
-    'centos-6'     => { virtualbox: 'boxcutter/centos67', docker: 'centos/centos6' },
-    'centos-7'     => { virtualbox: 'boxcutter/centos71', docker: 'centos/centos7' },
+    'ubuntu-12.04' => {virtualbox: 'boxcutter/ubuntu1204',  docker: 'ubuntu/precise'},
+    'ubuntu-14.04' => {virtualbox: 'boxcutter/ubuntu1404',  docker: 'ubuntu/trusty'},
+    'centos-6'     => {virtualbox: 'boxcutter/centos67',    docker: 'centos/centos6'},
+    'centos-7'     => {virtualbox: 'boxcutter/centos71',    docker: 'centos/centos7'},
   }
 
   boxes.each do |name, box_cfg|
@@ -30,29 +30,29 @@ Vagrant.configure(2) do |config|
       vm_config.vm.network "private_network", type: "dhcp"
 
       if name =~ /ubuntu/
-        vm_config.vm.provision "shell", inline: "apt-get --assume-yes --quiet --quiet update> /dev/null"
-        vm_config.vm.provision "shell", inline: "apt-get --assume-yes --quiet --quiet install rake ruby-json openjdk-7-jre unzip git > /dev/null"
+        vm_config.vm.provision "shell", inline: "apt-get update"
+        vm_config.vm.provision "shell", inline: "apt-get install -y rake ruby-json openjdk-7-jre unzip git"
         vm_config.vm.provision "shell", inline: "cd /vagrant/provision && sudo GO_VERSION=#{ENV['GO_VERSION']} USE_POSTGRES=#{ENV['USE_POSTGRES'] || 'No'} rake debian:#{ENV['TEST'] || 'fresh'}"
       elsif name =~ /centos/
         vm_config.vm.provision "shell", inline: "yum makecache"
-        vm_config.vm.provision "shell", inline: "yum install --assumeyes --quiet epel-release"
-        vm_config.vm.provision "shell", inline: "yum install --assumeyes --quiet rubygem-rake rubygem-json java-1.7.0-openjdk unzip git"
+        vm_config.vm.provision "shell", inline: "yum install -y epel-release"
+        vm_config.vm.provision "shell", inline: "yum install -y rubygem-rake rubygem-json java-1.7.0-openjdk unzip git"
         vm_config.vm.provision "shell", inline: "cd /vagrant/provision && sudo GO_VERSION=#{ENV['GO_VERSION']} USE_POSTGRES=#{ENV['USE_POSTGRES'] || 'No'} rake centos:#{ENV['TEST'] || 'fresh'}"
       end
 
 
       vm_config.vm.provider :virtualbox do |vb, override|
         override.vm.box = box_cfg[:virtualbox]
-        vb.gui          = ENV['GUI'] || false
-        vb.memory       = ((ENV['MEMORY'] || 4).to_f * 1024).to_i
-        vb.cpus         = 4
+        vb.gui    = ENV['GUI'] || false
+        vb.memory = ((ENV['MEMORY'] || 4).to_f * 1024).to_i
+        vb.cpus   = 4
       end
 
       vm_config.vm.provider :vmware_fusion do |vm, override|
         override.vm.box = box_cfg[:virtualbox]
-        vm.gui          = ENV['GUI'] || false
-        vm.memory       = ((ENV['MEMORY'] || 4).to_f * 1024).to_i
-        vm.cpus         = 4
+        vm.gui    = ENV['GUI'] || false
+        vm.memory = ((ENV['MEMORY'] || 4).to_f * 1024).to_i
+        vm.cpus   = 4
       end
     end
   end
@@ -68,10 +68,10 @@ Vagrant.configure(2) do |config|
 #    config.ohai.primary_nic = "eth1"
 #   end
 
-  if Vagrant.has_plugin?('vagrant-cachier')
-    config.cache.scope = :box
-    config.cache.enable :apt
-    config.cache.enable :apt_lists
-    config.cache.enable :yum
-  end
+   if Vagrant.has_plugin?('vagrant-cachier')
+     config.cache.scope = :box
+     config.cache.enable :apt
+     config.cache.enable :apt_lists
+     config.cache.enable :yum
+   end
 end
