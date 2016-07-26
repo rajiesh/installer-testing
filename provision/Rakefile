@@ -32,7 +32,7 @@ class Debian
     sh("apt-get update")
   end
 
-  def install(pkg_name, pkg_verion)
+  def install(pkg_name, pkg_version)
     sh("apt-get -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' install -y #{pkg_name}=#{pkg_version}")
   end
 
