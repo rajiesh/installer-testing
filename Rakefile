@@ -43,7 +43,6 @@ task :test_installers_w_postgres do
   json = JSON.parse(open(RELEASES_JSON_URL).read)
   version, release = json.sort {|a, b| a['go_full_version'] <=> b['go_full_version']}.last['go_full_version'].split('-')
   go_full_version = "#{version}-#{release}"
-#['ubuntu-12.04', 'ubuntu-14.04', 'centos-6', 'centos-7']
   ['ubuntu-14.04', 'centos-7'].each do |box|
 
     begin
