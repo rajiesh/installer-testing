@@ -92,7 +92,7 @@ def get_addons
   json = JSON.parse(open(STABLE_RELEASES_JSON_URL).read)
   myhash = json.sort {|a, b| a['go_full_version'] <=> b['go_full_version']}.reverse
   myhash.each_with_index do |key, index|
-    break if index == 4
+    break if index == 6
     addons = JSON.parse(File.read('../released_addons/addon_builds.json'))
     addons.each {|a|
       if (a['gocd_version'] == key['go_full_version'] && !File.exists?("addons/#{a['addons']['postgresql']}"))
