@@ -130,7 +130,8 @@ end
           @postgres_setup_done = 'Yes'
         end
 
-        sh(%Q{echo "GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\"" >> /etc/default/go-server})
+        sh('echo ''GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\"''>> /etc/default/go-server')
+
         version_revision = ENV['GO_INITIAL_VERSION'] || ENV['GO_VERSION']
         version = version_revision.split('-')[0][0,4]
         sh(%Q{sudo -H -u go bash -c 'mkdir -p /var/lib/go-server/addons ; cp /vagrant/addons/go-postgresql-#{version}.* /var/lib/go-server/addons/'})
