@@ -22,6 +22,7 @@ require 'logger'
 
 RELEASES_JSON_URL = 'https://download.go.cd/experimental/releases.json'
 STABLE_RELEASES_JSON_URL = 'https://download.go.cd/releases.json'
+UPGRADE_VERSIONS_LIST = "16.3.0-3183, 16.5.0-3305, 16.6.0-3590"
 
 task :test_installers do
   version_json    = JSON.parse(File.read('version.json'))
@@ -62,7 +63,7 @@ task :upgrade_tests do
 
   ['ubuntu-12.04', 'ubuntu-14.04', 'centos-6', 'centos-7'].each do |box|
       begin
-        sh "GO_VERSION=#{go_full_version} TEST=upgrade_test vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
+        sh "GO_VERSION=#{go_full_version} TEST=upgrade_test UPGRADE_VERSIONS_LIST=\"#{UPGRADE_VERSIONS_LIST}\" vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
       rescue => e
         raise "Installer testing failed. Error message #{e.message}"
       ensure
@@ -77,12 +78,14 @@ task :upgrade_tests_w_postgres do
   go_full_version = "#{version}-#{release}"
   get_addons
   ['ubuntu-14.04', 'centos-7'].each do |box|
-      begin
-        sh "GO_VERSION=#{go_full_version} TEST=upgrade_test USE_POSTGRES=yes vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
-      rescue => e
-        raise "Installer testing failed. Error message #{e.message}"
-      ensure
-        sh "vagrant destroy #{box} --force"
+      UPGRADE_VERSIONS_LIST.split(/\s*,\s*/).each do |from_version|
+        begin
+          sh "GO_VERSION=#{go_full_version} TEST=upgrade_test UPGRADE_VERSIONS_LIST=#{from_version} USE_POSTGRES=yes vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
+        rescue => e
+          raise "Installer testing failed. Error message #{e.message}"
+        ensure
+          sh "vagrant destroy #{box} --force"
+        end
       end
   end
 end

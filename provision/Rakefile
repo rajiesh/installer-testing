@@ -148,8 +148,7 @@ end
 
     task :change_postgres_addons_jar do
       if ENV['USE_POSTGRES'] == 'yes'
-        revision = ENV['GO_INITIAL_VERSION'] || ENV['GO_VERSION']
-        version = revision.split('-')[0][0,4]
+        version = ENV['GO_VERSION'].split('-')[0][0,4]
         sh(%Q{sudo -H -u go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/go-postgresql-#{version}.* /var/lib/go-server/addons/'})
         sh("/etc/init.d/go-server restart")
       end
@@ -310,7 +309,9 @@ end
     task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2, :stop, :uninstall]
 #'16.2.1-3027', '16.3.0-3183', '16.4.0-3223'
     task :upgrade_test do
-      ['16.5.0-3305'].each do |version|
+      upgrade_list = ENV['UPGRADE_VERSIONS_LIST']
+      p "this is the upgrade list #{upgrade_list}"
+      upgrade_list.split(/\s*,\s*/).each do |version|
         begin
           ENV['GO_INITIAL_VERSION']=version
           puts "upgrade test. Version FROM: #{ENV['GO_INITIAL_VERSION']} TO: #{ENV['GO_VERSION']}"
