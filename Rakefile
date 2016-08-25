@@ -22,12 +22,11 @@ require 'logger'
 
 RELEASES_JSON_URL = 'https://download.go.cd/experimental/releases.json'
 STABLE_RELEASES_JSON_URL = 'https://download.go.cd/releases.json'
-UPGRADE_VERSIONS_LIST = "16.3.0-3183, 16.5.0-3305, 16.6.0-3590"
+UPGRADE_VERSIONS_LIST = "16.3.0-3183, 16.6.0-3590, 16.8.0-3929"
 
 task :test_installers do
   version_json    = JSON.parse(File.read('version.json'))
   go_full_version = version_json['go_full_version']
-#['ubuntu-12.04', 'ubuntu-14.04', 'centos-6', 'centos-7']
   ['ubuntu-12.04', 'ubuntu-14.04', 'centos-6', 'centos-7'].each do |box|
 
     begin
