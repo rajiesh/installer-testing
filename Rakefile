@@ -34,7 +34,7 @@ task :test_installers do
     rescue => e
       raise "Installer testing failed. Error message #{e.message}"
     ensure
-    #  sh "vagrant destroy #{box} --force"
+      sh "vagrant destroy #{box} --force"
     end
   end
 end
