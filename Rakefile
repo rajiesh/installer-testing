@@ -22,7 +22,7 @@ require 'logger'
 
 RELEASES_JSON_URL = 'https://download.go.cd/experimental/releases.json'
 STABLE_RELEASES_JSON_URL = 'https://download.go.cd/releases.json'
-UPGRADE_VERSIONS_LIST = "16.3.0-3183, 16.6.0-3590, 16.9.0-4001"
+UPGRADE_VERSIONS_LIST = ENV['UPGRADE_VERSIONS_LIST'] || "16.4.0-3223, 16.6.0-3590, 16.9.0-4001"
 
 task :test_installers do
   version_json    = JSON.parse(File.read('version.json'))
