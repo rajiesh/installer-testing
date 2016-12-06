@@ -94,12 +94,9 @@ def get_addons
   myhash = json.sort {|a, b| a['go_full_version'] <=> b['go_full_version']}.reverse
   myhash.each_with_index do |key, index|
     if UPGRADE_VERSIONS_LIST.include? myhash[index]['go_full_version']
-      addons = JSON.parse(File.read('../released_addons/addon_builds.json'))
-      addons.each {|a|
-        if (a['gocd_version'] == key['go_full_version'] && !File.exists?("addons/#{a['addons']['postgresql']}"))
-          sh "curl -k -o addons/#{a['addons']['postgresql']} #{ENV['ADDON_DOWNLOAD_URL']}/#{a['gocd_version']}/#{a['addons']['postgresql']}"
-        end
-      }
+      if (!File.exists?("addons/go-postgresql-#{key['go_full_version']}.jar"))
+        sh "curl -k -o addons/go-postgresql-#{key['go_full_version']}.jar #{ENV['ADDON_DOWNLOAD_URL']}/#{key['go_full_version']}/go-postgresql-#{key['go_full_version']}.jar"
+      end
     end
   end
 end
