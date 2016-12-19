@@ -22,7 +22,7 @@ Vagrant.configure(2) do |config|
     'ubuntu-12.04' => {virtualbox: 'boxcutter/ubuntu1204',  docker: 'ubuntu/precise'},
     'ubuntu-14.04' => {virtualbox: 'boxcutter/ubuntu1404',  docker: 'ubuntu/trusty'},
     'centos-6'     => {virtualbox: 'boxcutter/centos67',    docker: 'centos/centos6'},
-    'centos-7'     => {virtualbox: 'boxcutter/centos71',    docker: 'centos/centos7'},
+    'centos-7'     => {virtualbox: 'boxcutter/centos72',    docker: 'centos/centos7'},
   }
 
   boxes.each do |name, box_cfg|
@@ -30,6 +30,9 @@ Vagrant.configure(2) do |config|
       vm_config.vm.network "private_network", type: "dhcp"
 
       if name =~ /ubuntu/
+
+        vm_config.vm.provision "shell", inline: "apt-get install -y software-properties-common python-software-properties"
+        vm_config.vm.provision "shell", inline: "add-apt-repository ppa:openjdk-r/ppa"
         vm_config.vm.provision "shell", inline: "apt-get update"
         vm_config.vm.provision "shell", inline: "apt-get install -y rake ruby-json openjdk-8-jre unzip git"
         vm_config.vm.provision "shell", inline: "sudo -i GO_VERSION=#{ENV['GO_VERSION']} USE_POSTGRES=#{ENV['USE_POSTGRES'] || 'No'} UPGRADE_VERSIONS_LIST=\"#{ENV['UPGRADE_VERSIONS_LIST'] || ''}\" rake --trace --rakefile /vagrant/provision/Rakefile debian:#{ENV['TEST'] || 'fresh'}"
