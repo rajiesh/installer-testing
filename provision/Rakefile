@@ -168,7 +168,7 @@ end
 
     def service_status
       puts 'wait for server to come up'
-      sh('wget http://localhost:8153/go/about --waitretry=90 --retry-connrefused --quiet -O /dev/null')
+      sh('wget http://localhost:8153/go/about --waitretry=120 --retry-connrefused --quiet -O /dev/null')
 
       # check if server startup with postgres only
       if ENV['USE_POSTGRES'] == 'yes'
@@ -186,6 +186,7 @@ end
       puts 'wait for agent to come up'
       Timeout.timeout(180) do
         loop do
+
           agent_v = ENV['UPGRADE_VERSIONS_LIST'].empty? ? "application/vnd.go.cd.v3+json" : "application/vnd.go.cd.v4+json"
           agents = JSON.parse(open('http://localhost:8153/go/api/agents', 'Accept' => agent_v).read)['_embedded']['agents']
 
