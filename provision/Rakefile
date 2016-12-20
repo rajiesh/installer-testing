@@ -186,7 +186,8 @@ end
       puts 'wait for agent to come up'
       Timeout.timeout(180) do
         loop do
-          agent_v = ENV['UPGRADE_VERSIONS_LIST'].empty? ? "application/vnd.go.cd.v4+json" : "application/vnd.go.cd.v3+json"
+          versions = JSON.parse(open('http://localhost:8153/go/api/version','Accept' => 'application/vnd.go.cd.v1+json').read)
+          agent_v = versions['version'] =~ /\A16/ ? "application/vnd.go.cd.v3+json" : "application/vnd.go.cd.v4+json"
           agents = JSON.parse(open('http://localhost:8153/go/api/agents', 'Accept' => agent_v).read)['_embedded']['agents']
 
           if agents.any? { |a| a['agent_state'] == 'Idle' }
