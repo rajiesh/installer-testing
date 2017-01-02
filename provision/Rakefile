@@ -25,10 +25,10 @@ class Debian
   include Rake::DSL if defined?(Rake::DSL)
   def repo
     open('/etc/apt/sources.list.d/gocd.list', 'w') do |f|
-      f.puts('deb https://download.go.cd /')
-      f.puts('deb https://download.go.cd/experimental /')
+      f.puts('deb https://download.gocd.io /')
+      f.puts('deb https://download.gocd.io/experimental /')
     end
-    sh("curl --silent --fail https://download.go.cd/GOCD-GPG-KEY.asc | apt-key add -")
+    sh("curl --silent --fail https://download.gocd.io/GOCD-GPG-KEY.asc | apt-key add -")
     sh("apt-get update")
   end
 
@@ -58,16 +58,16 @@ class Redhat
     open('/etc/yum.repos.d/gocd.repo', 'w') do |f|
       f.puts('[gocd]')
       f.puts('name=gocd')
-      f.puts('baseurl=https://download.go.cd')
+      f.puts('baseurl=https://download.gocd.io')
       f.puts('enabled=1')
       f.puts('gpgcheck=1')
-      f.puts('gpgkey=https://download.go.cd/GOCD-GPG-KEY.asc')
+      f.puts('gpgkey=https://download.gocd.io/GOCD-GPG-KEY.asc')
       f.puts('[gocd-exp]')
       f.puts('name=gocd-exp')
-      f.puts('baseurl=https://download.go.cd/experimental')
+      f.puts('baseurl=https://download.gocd.io/experimental')
       f.puts('enabled=1')
       f.puts('gpgcheck=1')
-      f.puts('gpgkey=https://download.go.cd/GOCD-GPG-KEY.asc')
+      f.puts('gpgkey=https://download.gocd.io/GOCD-GPG-KEY.asc')
     end
     sh("yum makecache --disablerepo='*' --enablerepo='gocd*'")
   end
