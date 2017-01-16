@@ -50,6 +50,7 @@ Vagrant.configure(2) do |config|
         vb.gui    = ENV['GUI'] || false
         vb.memory = ((ENV['MEMORY'] || 4).to_f * 1024).to_i
         vb.cpus   = 4
+        vb.customize ['modifyvm', :id, '--cableconnected1', 'on']
       end
 
       vm_config.vm.provider :vmware_fusion do |vm, override|
