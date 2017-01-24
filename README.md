@@ -11,9 +11,9 @@ Run this command to test latest experimental build on 4 environments - Ubuntu 12
 
 ```rake test_installers```
 
-Run this command to test upgrade to latest experimental build from the list of older versions provided
+Run this command to test upgrade to latest experimental build from the list of older versions provided on 4 environments - Ubuntu 12.04, Ubuntu 14.04, Centos6 and Centos7
 
-```UPGRADE_VERSIONS_LIST='X.x.x-<build_number>, ...' rake upgrade_tests``` on 4 environments - Ubuntu 12.04, Ubuntu 14.04, Centos6 and Centos7
+```UPGRADE_VERSIONS_LIST='X.x.x-<build_number>, ...' rake upgrade_tests``` 
 
 ## License
 
