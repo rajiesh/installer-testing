@@ -1,3 +1,20 @@
+## Pre-Requisites
+
+* Ruby
+* Rake
+* VirtualBox
+* Vagrant
+
+## Run test
+
+Run this command to test latest experimental build on 4 environments - Ubuntu 12.04, Ubuntu 14.04, Centos6 and Centos7
+
+```rake test_installers```
+
+Run this command to test upgrade to latest experimental build from the list of older versions provided
+
+```UPGRADE_VERSIONS_LIST='X.x.x-<build_number>, ...' rake upgrade_tests``` on 4 environments - Ubuntu 12.04, Ubuntu 14.04, Centos6 and Centos7
+
 ## License
 
 ```plain
