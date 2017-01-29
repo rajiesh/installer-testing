@@ -46,7 +46,7 @@ def partition(things)
 end
 
 task :test_installers do
-  distributions = ['ubuntu-12.04', 'ubuntu-14.04', 'centos-6', 'centos-7']
+  distributions = ['ubuntu-12.04', 'ubuntu-14.04', 'ubuntu-16.04', 'centos-6', 'centos-7']
   partition(distributions).each do |box|
     begin
       sh "GO_VERSION=#{full_version} vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
@@ -73,7 +73,7 @@ end
 
 
 task :upgrade_tests do
-  distributions = ['ubuntu-12.04', 'ubuntu-14.04', 'centos-6', 'centos-7']
+  distributions = ['ubuntu-12.04', 'ubuntu-14.04', 'ubuntu-16.04', 'centos-6', 'centos-7']
   partition(distributions).each do |box|
       begin
         sh "GO_VERSION=#{full_version} TEST=upgrade_test UPGRADE_VERSIONS_LIST=\"#{UPGRADE_VERSIONS_LIST}\" vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"

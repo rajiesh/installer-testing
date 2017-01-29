@@ -19,10 +19,11 @@
 
 Vagrant.configure(2) do |config|
   boxes = {
-    'ubuntu-12.04' => {virtualbox: 'boxcutter/ubuntu1204',  docker: 'ubuntu/precise'},
-    'ubuntu-14.04' => {virtualbox: 'boxcutter/ubuntu1404',  docker: 'ubuntu/trusty'},
-    'centos-6'     => {virtualbox: 'boxcutter/centos67',    docker: 'centos/centos6'},
-    'centos-7'     => {virtualbox: 'boxcutter/centos71',    docker: 'centos/centos7'},
+    'ubuntu-12.04' => {virtualbox: 'boxcutter/ubuntu1204'},
+    'ubuntu-14.04' => {virtualbox: 'boxcutter/ubuntu1404'},
+    'ubuntu-16.04' => {virtualbox: 'boxcutter/ubuntu1604'},
+    'centos-6'     => {virtualbox: 'boxcutter/centos67'},
+    'centos-7'     => {virtualbox: 'boxcutter/centos71'},
   }
 
   boxes.each do |name, box_cfg|
