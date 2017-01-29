@@ -29,18 +29,34 @@ Vagrant.configure(2) do |config|
   }
 
   def configure_ppa(vm_config)
-    vm_config.vm.provision "shell", inline: "apt-get update"
     vm_config.vm.provision "shell", inline: "apt-get install -y software-properties-common python-software-properties"
     vm_config.vm.provision "shell", inline: "add-apt-repository ppa:openjdk-r/ppa"
+    vm_config.vm.provision "shell", inline: "apt-get update"
+  end
+
+  def configure_jessie_backports(vm_config)
+    vm_config.vm.provision "shell", inline: "echo 'deb http://http.debian.net/debian jessie-backports main' | sudo tee /etc/apt/sources.list.d/jessie-backports.list"
+    vm_config.vm.provision "shell", inline: "apt-get update"
+
+  end
+
+  def install_oracle_jdk(vm_config)
+    vm_config.vm.provision "shell", inline: "wget --continue --no-check-certificate -O /var/cache/wget/jdk-8u121-linux-x64.tar.gz --header 'Cookie: oraclelicense=a' http://download.oracle.com/otn-pub/java/jdk/8u121-b13/e9e7ea248e2c4826b92b3f075a80e441/jdk-8u121-linux-x64.tar.gz"
+    vm_config.vm.provision "shell", inline: "rm -rf /opt/jdk8 && mkdir -p /opt/jdk8 && tar -zxf /var/cache/wget/jdk-8u121-linux-x64.tar.gz -C /opt/jdk8 --strip-components=1"
+    vm_config.vm.provision "shell", inline: "for i in /opt/jdk8/bin/*; do ln -sfv $i /usr/local/bin/$(basename $i); done"
   end
 
   boxes.each do |name, box_cfg|
     config.vm.define name do |vm_config|
       vm_config.vm.network "private_network", type: "dhcp"
       if name =~ /ubuntu|debian/
-        # this PPA is not needed since 16.04
-        configure_ppa(vm_config) if name =~ /(ubuntu-(12|14))|(debian)/
         vm_config.vm.provision "shell", inline: "apt-get update"
+        vm_config.vm.provision "shell", inline: "apt-get install -y apt-transport-https"
+
+        configure_ppa(vm_config) if name =~ /(ubuntu-(12|14))/
+        configure_jessie_backports(vm_config) if name =~ /debian-8/
+        install_oracle_jdk(vm_config) if name =~ /debian-7/
+
         vm_config.vm.provision "shell", inline: "apt-get install -y rake ruby-json unzip git"
         vm_config.vm.provision "shell", inline: "sudo -i GO_VERSION=#{ENV['GO_VERSION']} USE_POSTGRES=#{ENV['USE_POSTGRES'] || 'No'} UPGRADE_VERSIONS_LIST=\"#{ENV['UPGRADE_VERSIONS_LIST'] || ''}\" rake --trace --rakefile /vagrant/provision/Rakefile debian:#{ENV['TEST'] || 'fresh'}"
       elsif name =~ /centos/
@@ -81,9 +97,12 @@ Vagrant.configure(2) do |config|
 #   end
 
    if Vagrant.has_plugin?('vagrant-cachier')
-     config.cache.scope = :box
-     config.cache.enable :apt
-     config.cache.enable :apt_lists
-     config.cache.enable :yum
+      config.cache.scope = :box
+      config.cache.enable :apt
+      config.cache.enable :apt_lists
+      config.cache.enable :yum
+      config.cache.enable :generic, {
+        "wget" => { cache_dir: "/var/cache/wget" },
+      }
    end
 end
