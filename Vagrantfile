@@ -43,9 +43,6 @@ Vagrant.configure(2) do |config|
     vm_config.vm.provision "shell", inline: "echo 'deb http://repos.azulsystems.com/debian stable main' | sudo tee /etc/apt/sources.list.d/zulu.list"
     vm_config.vm.provision "shell", inline: "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0x219BD9C9"
     vm_config.vm.provision "shell", inline: "apt-get update"
-    # vm_config.vm.provision "shell", inline: "wget --continue --no-check-certificate -O /var/cache/wget/jdk-8u121-linux-x64.tar.gz --header 'Cookie: oraclelicense=a' http://download.oracle.com/otn-pub/java/jdk/8u121-b13/e9e7ea248e2c4826b92b3f075a80e441/jdk-8u121-linux-x64.tar.gz"
-    # vm_config.vm.provision "shell", inline: "rm -rf /opt/jdk8 && mkdir -p /opt/jdk8 && tar -zxf /var/cache/wget/jdk-8u121-linux-x64.tar.gz -C /opt/jdk8 --strip-components=1"
-    # vm_config.vm.provision "shell", inline: "for i in /opt/jdk8/bin/*; do ln -sfv $i /usr/local/bin/$(basename $i); done"
   end
 
   boxes.each do |name, box_cfg|
