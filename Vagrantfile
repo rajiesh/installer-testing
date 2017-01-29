@@ -22,20 +22,26 @@ Vagrant.configure(2) do |config|
     'ubuntu-12.04' => {virtualbox: 'boxcutter/ubuntu1204'},
     'ubuntu-14.04' => {virtualbox: 'boxcutter/ubuntu1404'},
     'ubuntu-16.04' => {virtualbox: 'boxcutter/ubuntu1604'},
+    'debian-7'     => {virtualbox: 'boxcutter/debian7'},
+    'debian-8'     => {virtualbox: 'boxcutter/debian8'},
     'centos-6'     => {virtualbox: 'boxcutter/centos67'},
     'centos-7'     => {virtualbox: 'boxcutter/centos71'},
   }
 
+  def configure_ppa(vm_config)
+    vm_config.vm.provision "shell", inline: "apt-get update"
+    vm_config.vm.provision "shell", inline: "apt-get install -y software-properties-common python-software-properties"
+    vm_config.vm.provision "shell", inline: "add-apt-repository ppa:openjdk-r/ppa"
+  end
+
   boxes.each do |name, box_cfg|
     config.vm.define name do |vm_config|
       vm_config.vm.network "private_network", type: "dhcp"
-
-      if name =~ /ubuntu/
+      if name =~ /ubuntu|debian/
+        # this PPA is not needed since 16.04
+        configure_ppa(vm_config) if name =~ /(ubuntu-(12|14))|(debian)/
         vm_config.vm.provision "shell", inline: "apt-get update"
-        vm_config.vm.provision "shell", inline: "apt-get install -y software-properties-common python-software-properties"
-        vm_config.vm.provision "shell", inline: "add-apt-repository ppa:openjdk-r/ppa"
-        vm_config.vm.provision "shell", inline: "apt-get update"
-        vm_config.vm.provision "shell", inline: "apt-get install -y rake ruby-json openjdk-8-jre unzip git"
+        vm_config.vm.provision "shell", inline: "apt-get install -y rake ruby-json unzip git"
         vm_config.vm.provision "shell", inline: "sudo -i GO_VERSION=#{ENV['GO_VERSION']} USE_POSTGRES=#{ENV['USE_POSTGRES'] || 'No'} UPGRADE_VERSIONS_LIST=\"#{ENV['UPGRADE_VERSIONS_LIST'] || ''}\" rake --trace --rakefile /vagrant/provision/Rakefile debian:#{ENV['TEST'] || 'fresh'}"
       elsif name =~ /centos/
         vm_config.vm.provision "shell", inline: "yum makecache"
