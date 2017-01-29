@@ -31,7 +31,7 @@ Vagrant.configure(2) do |config|
       vm_config.vm.network "private_network", type: "dhcp"
 
       if name =~ /ubuntu/
-
+        vm_config.vm.provision "shell", inline: "apt-get update"
         vm_config.vm.provision "shell", inline: "apt-get install -y software-properties-common python-software-properties"
         vm_config.vm.provision "shell", inline: "add-apt-repository ppa:openjdk-r/ppa"
         vm_config.vm.provision "shell", inline: "apt-get update"
