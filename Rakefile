@@ -20,8 +20,8 @@ require 'fileutils'
 require 'open-uri'
 require 'logger'
 
-RELEASES_JSON_URL = 'https://download.go.cd/experimental/releases.json'
-STABLE_RELEASES_JSON_URL = 'https://download.go.cd/releases.json'
+RELEASES_JSON_URL = ENV['RELEASES_JSON_URL'] || 'https://download.go.cd/experimental/releases.json'
+STABLE_RELEASES_JSON_URL = ENV['STABLE_RELEASES_JSON_URL'] || 'https://download.go.cd/releases.json'
 UPGRADE_VERSIONS_LIST = ENV['UPGRADE_VERSIONS_LIST'] || "16.8.0-3929, 16.10.0-4131, 16.12.0-4352"
 
 def partition(things)
@@ -46,7 +46,7 @@ def partition(things)
 end
 
 task :test_installers do
-  distributions = ['debian-7', 'debian-8', 'ubuntu-12.04', 'ubuntu-14.04', 'ubuntu-16.04', 'centos-6', 'centos-7']
+  distributions = ['debian-7', 'debian-8', 'ubuntu-12.04', 'ubuntu-14.04', 'centos-6', 'centos-7']
   partition(distributions).each do |box|
     begin
       sh "GO_VERSION=#{full_version} vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
@@ -73,7 +73,7 @@ end
 
 
 task :upgrade_tests do
-  distributions = ['debian-7', 'debian-8', 'ubuntu-12.04', 'ubuntu-14.04', 'ubuntu-16.04', 'centos-6', 'centos-7']
+  distributions = ['debian-7', 'debian-8', 'ubuntu-12.04', 'ubuntu-14.04', 'centos-6', 'centos-7']
   partition(distributions).each do |box|
       begin
         sh "GO_VERSION=#{full_version} TEST=upgrade_test UPGRADE_VERSIONS_LIST=\"#{UPGRADE_VERSIONS_LIST}\" vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision"
@@ -106,8 +106,9 @@ def download_addons
   myhash = json.sort {|a, b| a['go_full_version'] <=> b['go_full_version']}.reverse
   myhash.each_with_index do |key, index|
     if UPGRADE_VERSIONS_LIST.include? myhash[index]['go_full_version']
-      if (!File.exists?("addons/go-postgresql-#{key['go_full_version']}.jar"))
-        sh "curl -k -o addons/go-postgresql-#{key['go_full_version']}.jar #{ENV['ADDON_DOWNLOAD_URL']}/#{key['go_full_version']}/go-postgresql-#{key['go_full_version']}.jar"
+      addon = addon_for(key['go_full_version'])
+      if (!File.exists?("addons/#{addon}"))
+        sh "curl -k -o addons/#{addon} #{ENV['ADDON_DOWNLOAD_URL']}/#{key['go_full_version']}/#{addon}"
       end
     end
   end
@@ -116,4 +117,9 @@ end
 def full_version
   json = JSON.parse(open(RELEASES_JSON_URL).read)
   json.sort {|a, b| a['go_full_version'] <=> b['go_full_version']}.last['go_full_version']
+end
+
+def addon_for(core)
+  versions_map = JSON.parse(File.read('./addons/addon_builds.json'))
+  versions_map.select{|v| v['gocd_version'] == core}.last['addons']['postgresql']
 end
