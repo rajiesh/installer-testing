@@ -124,6 +124,7 @@ end
       if ENV['USE_POSTGRES'] == 'yes'
         p 'Setting up postgres addon'
         sh('sleep 60')
+        addon = addon_for server_version
         sh('/etc/init.d/go-server stop')
         if @postgres_setup_done == 'No'
           klass.new.setup_postgres
@@ -132,9 +133,7 @@ end
 
         sh('echo ''GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\"''>> /etc/default/go-server')
 
-        version_revision = ENV['GO_INITIAL_VERSION'] || ENV['GO_VERSION']
-        version = version_revision.split('-')[0]
-        sh(%Q{sudo -H -u go bash -c 'mkdir -p /var/lib/go-server/addons ; cp /vagrant/addons/go-postgresql-#{version}-* /var/lib/go-server/addons/'})
+        sh(%Q{sudo -H -u go bash -c 'mkdir -p /var/lib/go-server/addons ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
         sh(%Q{sudo -H -u go bash -c 'echo "db.host=localhost"  >> /etc/go/postgresqldb.properties'})
         sh(%Q{sudo -H -u go bash -c 'echo "db.port=5432"  >> /etc/go/postgresqldb.properties'})
         sh(%Q{sudo -H -u go bash -c 'echo "db.name=cruise"  >> /etc/go/postgresqldb.properties'})
@@ -148,8 +147,8 @@ end
 
     task :change_postgres_addons_jar do
       if ENV['USE_POSTGRES'] == 'yes'
-        version = ENV['GO_VERSION'].split('-')[0]
-        sh(%Q{sudo -H -u go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/go-postgresql-#{version}-* /var/lib/go-server/addons/'})
+        addon = addon_for server_version
+        sh(%Q{sudo -H -u go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
         sh("/etc/init.d/go-server restart")
       end
     end
@@ -292,6 +291,17 @@ end
       end
     end
 
+    def server_version
+      versions = JSON.parse(open('http://localhost:8153/go/api/version','Accept' => 'application/vnd.go.cd.v1+json').read)
+      "#{versions['version']}-#{versions['build_number']}"
+    end
+
+    def addon_for(core)
+      versions_map = JSON.parse(File.read('/vagrant/addons/addon_builds.json'))
+      versions_map.select{|v| v['gocd_version'] == core}.last['addons']['postgresql']
+    end
+
+
     task :stop do
       sh('service go-server stop')
       sh('service go-agent stop')
@@ -309,7 +319,7 @@ end
     task :fresh => [:repo, :install_latest_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline, :unpause_pipeline, :check_pipeline_pass_with_label_1, :stop]
     task :setup   => [:repo, :install_old_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
     task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2, :stop, :uninstall]
-#'16.2.1-3027', '16.3.0-3183', '16.4.0-3223'
+
     task :upgrade_test do
       upgrade_list = ENV['UPGRADE_VERSIONS_LIST']
       p "this is the upgrade list #{upgrade_list}"

@@ -21,7 +21,6 @@ Vagrant.configure(2) do |config|
   boxes = {
     'ubuntu-12.04' => {virtualbox: 'boxcutter/ubuntu1204'},
     'ubuntu-14.04' => {virtualbox: 'boxcutter/ubuntu1404'},
-    'ubuntu-16.04' => {virtualbox: 'boxcutter/ubuntu1604'},
     'debian-7'     => {virtualbox: 'boxcutter/debian7'},
     'debian-8'     => {virtualbox: 'boxcutter/debian8'},
     'centos-6'     => {virtualbox: 'boxcutter/centos68'},
