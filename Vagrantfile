@@ -35,6 +35,11 @@ Vagrant.configure(2) do |config|
     vm_config.vm.provision "shell", inline: "apt-get install -y openjdk-8-jre"
   end
 
+  def install_jdk_8(vm_config)
+    vm_config.vm.provision "shell", inline: "apt-get update"
+    vm_config.vm.provision "shell", inline: "apt-get install -7 openjdk-8-jre-headless"
+  end
+
   def configure_jessie_backports(vm_config)
     vm_config.vm.provision "shell", inline: "echo 'deb http://http.debian.net/debian jessie-backports main' | sudo tee /etc/apt/sources.list.d/jessie-backports.list"
     vm_config.vm.provision "shell", inline: "apt-get update"
