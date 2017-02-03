@@ -25,7 +25,7 @@ Vagrant.configure(2) do |config|
     'debian-7'     => {virtualbox: 'boxcutter/debian7'},
     'debian-8'     => {virtualbox: 'boxcutter/debian8'},
     'centos-6'     => {virtualbox: 'boxcutter/centos68'},
-    'centos-7'     => {virtualbox: 'boxcutter/centos72'},
+    'centos-7'     => {virtualbox: 'boxcutter/centos71'},
   }
 
   def configure_ppa(vm_config)
