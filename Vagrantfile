@@ -21,6 +21,7 @@ Vagrant.configure(2) do |config|
   boxes = {
     'ubuntu-12.04' => {virtualbox: 'boxcutter/ubuntu1204'},
     'ubuntu-14.04' => {virtualbox: 'boxcutter/ubuntu1404'},
+    'ubuntu-16.04' => {virtualbox: 'boxcutter/ubuntu1604'},
     'debian-7'     => {virtualbox: 'boxcutter/debian7'},
     'debian-8'     => {virtualbox: 'boxcutter/debian8'},
     'centos-6'     => {virtualbox: 'boxcutter/centos68'},
@@ -31,11 +32,13 @@ Vagrant.configure(2) do |config|
     vm_config.vm.provision "shell", inline: "apt-get install -y software-properties-common python-software-properties"
     vm_config.vm.provision "shell", inline: "add-apt-repository ppa:openjdk-r/ppa"
     vm_config.vm.provision "shell", inline: "apt-get update"
+    vm_config.vm.provision "shell", inline: "apt-get install -y openjdk-8-jre"
   end
 
   def configure_jessie_backports(vm_config)
     vm_config.vm.provision "shell", inline: "echo 'deb http://http.debian.net/debian jessie-backports main' | sudo tee /etc/apt/sources.list.d/jessie-backports.list"
     vm_config.vm.provision "shell", inline: "apt-get update"
+    vm_config.vm.provision "shell", inline: "apt-get -t jessie-backports install -y openjdk-8-jre"
   end
 
   def configure_squeeze(vm_config)
@@ -51,9 +54,10 @@ Vagrant.configure(2) do |config|
         vm_config.vm.provision "shell", inline: "apt-get update"
         vm_config.vm.provision "shell", inline: "apt-get install -y apt-transport-https"
 
-        configure_ppa(vm_config) if name =~ /(ubuntu-(12|14))/
+        configure_ppa(vm_config) if name =~ /(ubuntu-(12|14|16))/
         configure_jessie_backports(vm_config) if name =~ /debian-8/
         configure_squeeze(vm_config) if name =~ /debian-7/
+
 
         vm_config.vm.provision "shell", inline: "apt-get install -y rake ruby-json unzip git"
         vm_config.vm.provision "shell", inline: "sudo -i GO_VERSION=#{ENV['GO_VERSION']} USE_POSTGRES=#{ENV['USE_POSTGRES'] || 'No'} UPGRADE_VERSIONS_LIST=\"#{ENV['UPGRADE_VERSIONS_LIST'] || ''}\" rake --trace --rakefile /vagrant/provision/Rakefile debian:#{ENV['TEST'] || 'fresh'}"
