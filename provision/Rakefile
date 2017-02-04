@@ -106,7 +106,7 @@ end
 
     task :install_server do
        klass.new.install('go-server', ENV['GO_VERSION'])
-       sh('service go-server start')
+       #sh('service go-server start')
     end
 
     task :install_agent do
@@ -147,7 +147,7 @@ end
 
     task :change_postgres_addons_jar do
       if ENV['USE_POSTGRES'] == 'yes'
-        addon = addon_for server_version
+        addon = addon_for ENV['GO_VERSION']
         sh(%Q{sudo -H -u go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
         sh("/etc/init.d/go-server restart")
       end
@@ -303,7 +303,7 @@ end
 
 
     task :stop do
-      sh('service go-server stop')
+      #sh('service go-server stop')
       sh('service go-agent stop')
     end
 
