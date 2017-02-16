@@ -106,7 +106,7 @@ end
 
     task :install_server do
        klass.new.install('go-server', ENV['GO_VERSION'])
-       #sh('service go-server start')
+       sh('service go-server start')
     end
 
     task :install_agent do
@@ -117,6 +117,7 @@ end
 
     task :install_old_version do
       klass.new.install('go-server', ENV['GO_INITIAL_VERSION'])
+      sh('service go-server start')
       klass.new.install('go-agent', ENV['GO_INITIAL_VERSION'])
     end
 
@@ -200,16 +201,14 @@ end
     task :create_pipeline do
       url = 'http://localhost:8153/go/api/admin/pipelines'
       puts 'create a pipeline'
-      sh(%Q{curl -sL -w "%{http_code}" -X POST  -H "Accept: application/vnd.go.cd.v2+json" -H "Content-Type: application/json" --data "@/vagrant/filesystem/pipeline.json" #{url} -o /dev/null})
+      versions = JSON.parse(open('http://localhost:8153/go/api/version','Accept' => 'application/vnd.go.cd.v1+json').read)
+      agent_v = versions['version'] =~ /\A16/ ? "application/vnd.go.cd.v2+json" : "application/vnd.go.cd.v3+json"
+      sh(%Q{curl -sL -w "%{http_code}" -X POST  -H "Accept: #{agent_v}" -H "Content-Type: application/json" --data "@/vagrant/filesystem/pipeline.json" #{url} -o /dev/null})
     end
 
     task :create_pipeline_by_config do
-      if ENV['GO_INITIAL_VERSION'] =~ /\A15/
-        create_pipeline
-      else
         Rake::Task["#{os}:create_pipeline"].reenable
         Rake::Task["#{os}:create_pipeline"].invoke
-      end
     end
 
     task :unpause_pipeline do
@@ -301,24 +300,9 @@ end
       versions_map.select{|v| v['gocd_version'] == core}.last['addons']['postgresql']
     end
 
-
-    task :stop do
-      #sh('service go-server stop')
-      sh('service go-agent stop')
-    end
-
-    task :uninstall do
-      klass.new.uninstall('go-server', ENV['GO_VERSION'])
-      klass.new.uninstall('go-agent', ENV['GO_VERSION'])
-      sh("rm -rf /etc/go")
-      sh("rm -rf /var/log/go-*")
-      sh("rm -rf /var/lib/go-*")
-      #sh("rm -rf /etc/default/go-*")
-    end
-
-    task :fresh => [:repo, :install_latest_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline, :unpause_pipeline, :check_pipeline_pass_with_label_1, :stop]
+    task :fresh => [:repo, :install_latest_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline, :unpause_pipeline, :check_pipeline_pass_with_label_1]
     task :setup   => [:repo, :install_old_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
-    task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2, :stop, :uninstall]
+    task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
 
     task :upgrade_test do
       upgrade_list = ENV['UPGRADE_VERSIONS_LIST']
@@ -346,8 +330,6 @@ end
           Rake::Task["#{os}:check_service_is_up_again"].reenable
           Rake::Task["#{os}:trigger_pipeline_again"].reenable
           Rake::Task["#{os}:check_pipeline_pass_with_label_2"].reenable
-          Rake::Task["#{os}:stop"].reenable
-          Rake::Task["#{os}:uninstall"].reenable
         end
       end
     end
