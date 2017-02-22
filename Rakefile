@@ -73,7 +73,7 @@ end
 
 
 task :upgrade_tests do
-  distributions = ['debian-8', 'ubuntu-12.04', 'ubuntu-14.04', 'ubuntu-16.04', 'centos-7']
+  distributions = ['debian-8', 'ubuntu-12.04', 'ubuntu-14.04', 'ubuntu-16.04', 'centos-6','centos-7']
   partition(distributions).each do |box|
     UPGRADE_VERSIONS_LIST.split(/\s*,\s*/).each do |from_version|
       begin
