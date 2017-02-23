@@ -110,7 +110,7 @@ def download_addons
     if UPGRADE_VERSIONS_LIST.include? myhash[index]['go_full_version']
       addon = addon_for(key['go_full_version'])
       if (!File.exists?("addons/#{addon}"))
-        sh "curl -k -o addons/#{addon} #{ENV['ADDON_DOWNLOAD_URL']}/#{key['go_full_version']}/#{addon}"
+        sh "curl -k -o lib/addons/#{addon} #{ENV['ADDON_DOWNLOAD_URL']}/#{key['go_full_version']}/#{addon}"
       end
     end
   end
@@ -122,6 +122,6 @@ def full_version
 end
 
 def addon_for(core)
-  versions_map = JSON.parse(File.read('./addons/addon_builds.json'))
+  versions_map = JSON.parse(File.read('./lib/addons/addon_builds.json'))
   versions_map.select{|v| v['gocd_version'] == core}.last['addons']['postgresql']
 end
