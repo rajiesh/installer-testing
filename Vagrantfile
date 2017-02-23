@@ -1,5 +1,5 @@
 ##########################################################################
-# Copyright 2016 ThoughtWorks, Inc.
+# Copyright 2017 ThoughtWorks, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ Vagrant.configure(2) do |config|
     config.vm.define name do |vm_config|
       vm_config.vm.network "private_network", type: "dhcp"
       vm_config.vm.boot_timeout = 600
+      vm_config.vm.synced_folder "lib", "/vagrant"
       if name =~ /ubuntu|debian/
         vm_config.vm.provision "shell", inline: "apt-get update"
         vm_config.vm.provision "shell", inline: "apt-get install -y apt-transport-https"

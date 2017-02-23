@@ -203,7 +203,7 @@ end
       puts 'create a pipeline'
       versions = JSON.parse(open('http://localhost:8153/go/api/version','Accept' => 'application/vnd.go.cd.v1+json').read)
       agent_v = versions['version'] =~ /\A16/ ? "application/vnd.go.cd.v2+json" : "application/vnd.go.cd.v3+json"
-      sh(%Q{curl -sL -w "%{http_code}" -X POST  -H "Accept: #{agent_v}" -H "Content-Type: application/json" --data "@/vagrant/filesystem/pipeline.json" #{url} -o /dev/null})
+      sh(%Q{curl -sL -w "%{http_code}" -X POST  -H "Accept: #{agent_v}" -H "Content-Type: application/json" --data "@/vagrant/provision/filesystem/pipeline.json" #{url} -o /dev/null})
     end
 
     task :create_pipeline_by_config do
