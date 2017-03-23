@@ -168,7 +168,7 @@ end
 
     def service_status
       puts 'wait for server to come up'
-      sh('wget http://localhost:8153/go/about --waitretry=120 --retry-connrefused --quiet -O /dev/null')
+      sh('wget http://localhost:8153/go/auth/login --waitretry=120 --retry-connrefused --quiet -O /dev/null')
 
       # check if server startup with postgres only
       if ENV['USE_POSTGRES'] == 'yes'
