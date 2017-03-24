@@ -53,6 +53,7 @@ task :test_installers do
     rescue => e
       raise "Installer testing failed. Error message #{e.message}"
     ensure
+      sh "VBoxManage list vms --long"
       sh "vagrant destroy #{box} --force"
     end
   end
@@ -81,6 +82,7 @@ task :upgrade_tests do
       rescue => e
         raise "Installer testing failed. Error message #{e.message}"
       ensure
+        sh "VBoxManage list vms --long"
         sh "vagrant destroy #{box} --force"
       end
     end
