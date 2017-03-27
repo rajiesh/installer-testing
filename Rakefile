@@ -55,7 +55,8 @@ task :test_installers do
     ensure
       sh "VBoxManage list vms --long"
       sh "vagrant destroy #{box} --force"
-    end
+      sh "VBoxManage list vms --long"
+  end
   end
 end
 
@@ -84,6 +85,7 @@ task :upgrade_tests do
       ensure
         sh "VBoxManage list vms --long"
         sh "vagrant destroy #{box} --force"
+        sh "VBoxManage list vms --long"
       end
     end
   end
