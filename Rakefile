@@ -49,14 +49,11 @@ task :test_installers do
   distributions = ['debian-8', 'ubuntu-12.04', 'ubuntu-14.04', 'ubuntu-16.04', 'centos-6', 'centos-7']
   partition(distributions).each do |box|
     begin      
-      sh "VBoxManage list vms --long"
       sh "GO_VERSION=#{full_version} vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision --no-parallel"
     rescue => e
       raise "Installer testing failed. Error message #{e.message}"
     ensure
-      sh "VBoxManage list vms --long"
       sh "vagrant destroy #{box} --force"
-      sh "VBoxManage list vms --long"
   end
   end
 end
@@ -80,14 +77,11 @@ task :upgrade_tests do
   partition(distributions).each do |box|
     UPGRADE_VERSIONS_LIST.split(/\s*,\s*/).each do |from_version|
       begin
-        sh "VBoxManage list vms --long"
         sh "GO_VERSION=#{full_version} TEST=upgrade_test UPGRADE_VERSIONS_LIST=#{from_version} vagrant up #{box} --provider #{ENV['PROVIDER'] || 'virtualbox'} --provision --no-parallel"
       rescue => e
         raise "Installer testing failed. Error message #{e.message}"
       ensure
-        sh "VBoxManage list vms --long"
         sh "vagrant destroy #{box} --force"
-        sh "VBoxManage list vms --long"
       end
     end
   end
