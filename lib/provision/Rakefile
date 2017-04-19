@@ -106,7 +106,8 @@ end
 
     task :install_server do
        klass.new.install('go-server', ENV['GO_VERSION'])
-       sh('service go-server start')
+       # Do not start the server if using postgres, lets setup the addon and then start the server
+       sh('service go-server start') unless ENV['USE_POSTGRES'] == 'yes'
     end
 
     task :install_agent do
