@@ -105,9 +105,16 @@ end
     end
 
     task :install_server do
-       klass.new.install('go-server', ENV['GO_VERSION'])
-       # Do not start the server if using postgres, lets setup the addon and then start the server
-       sh('service go-server start') unless ENV['USE_POSTGRES'] == 'yes'
+      sh('service go-server stop || true')
+      klass.new.install('go-server', ENV['GO_VERSION'])
+       if ENV['USE_POSTGRES'] == 'yes'
+         if @postgres_setup_done == 'No'
+           klass.new.setup_postgres
+           @postgres_setup_done = 'Yes'
+         end
+         setup_postgres_addon ENV['GO_VERSION']
+       end
+       sh('service go-server start')
     end
 
     task :install_agent do
@@ -118,33 +125,29 @@ end
 
     task :install_old_version do
       klass.new.install('go-server', ENV['GO_INITIAL_VERSION'])
-      sh('service go-server start')
-      klass.new.install('go-agent', ENV['GO_INITIAL_VERSION'])
-    end
-
-    task :setup_postgres_addon do
       if ENV['USE_POSTGRES'] == 'yes'
-        p 'Setting up postgres addon'
-        sh('sleep 60')
-        addon = addon_for server_version
-        sh('/etc/init.d/go-server stop')
         if @postgres_setup_done == 'No'
           klass.new.setup_postgres
           @postgres_setup_done = 'Yes'
         end
-
-        sh('echo ''GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\"''>> /etc/default/go-server')
-
-        sh(%Q{sudo -H -u go bash -c 'mkdir -p /var/lib/go-server/addons ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
-        sh(%Q{sudo -H -u go bash -c 'echo "db.host=localhost"  >> /etc/go/postgresqldb.properties'})
-        sh(%Q{sudo -H -u go bash -c 'echo "db.port=5432"  >> /etc/go/postgresqldb.properties'})
-        sh(%Q{sudo -H -u go bash -c 'echo "db.name=cruise"  >> /etc/go/postgresqldb.properties'})
-        sh(%Q{sudo -H -u go bash -c 'echo "db.user=postgres"  >> /etc/go/postgresqldb.properties'})
-        sh(%Q{sudo -H -u go bash -c 'echo "db.password=postgres"  >> /etc/go/postgresqldb.properties'})
-        sh('/etc/init.d/go-server start')
-      else
-        p 'Continuing with h2 database'
+        setup_postgres_addon ENV['GO_INITIAL_VERSION']
       end
+      sh('service go-server start')
+      klass.new.install('go-agent', ENV['GO_INITIAL_VERSION'])
+    end
+
+    def setup_postgres_addon(version)
+      p 'Setting up postgres addon'
+      sh('service go-server stop || true')
+      addon = addon_for version
+      sh('echo ''GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\"''>> /etc/default/go-server')
+
+      sh(%Q{sudo -H -u go bash -c 'mkdir -p /var/lib/go-server/addons ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
+      sh(%Q{sudo -H -u go bash -c 'echo "db.host=localhost"  >> /etc/go/postgresqldb.properties'})
+      sh(%Q{sudo -H -u go bash -c 'echo "db.port=5432"  >> /etc/go/postgresqldb.properties'})
+      sh(%Q{sudo -H -u go bash -c 'echo "db.name=cruise"  >> /etc/go/postgresqldb.properties'})
+      sh(%Q{sudo -H -u go bash -c 'echo "db.user=postgres"  >> /etc/go/postgresqldb.properties'})
+      sh(%Q{sudo -H -u go bash -c 'echo "db.password=postgres"  >> /etc/go/postgresqldb.properties'})
     end
 
     task :change_postgres_addons_jar do
@@ -325,8 +328,8 @@ end
       versions_map.select{|v| v['gocd_version'] == core}.last['addons']['postgresql']
     end
 
-    task :fresh => [:repo, :install_latest_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline, :unpause_pipeline, :check_pipeline_pass_with_label_1]
-    task :setup   => [:repo, :install_old_version, :setup_postgres_addon, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
+    task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline, :unpause_pipeline, :check_pipeline_pass_with_label_1]
+    task :setup   => [:repo, :install_old_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
     task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
 
     task :upgrade_test do
@@ -344,7 +347,6 @@ end
           Rake::Task["#{os}:setup"].reenable
           Rake::Task["#{os}:repo"].reenable
           Rake::Task["#{os}:install_old_version"].reenable
-          Rake::Task["#{os}:setup_postgres_addon"].reenable
           Rake::Task["#{os}:start_agent"].reenable
           Rake::Task["#{os}:check_service_is_up"].reenable
           Rake::Task["#{os}:create_pipeline_by_config"].reenable
