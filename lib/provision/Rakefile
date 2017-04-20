@@ -70,7 +70,6 @@ class Redhat
       f.puts('gpgkey=https://download.gocd.io/GOCD-GPG-KEY.asc')
     end
     sh("yum makecache --disablerepo='*' --enablerepo='gocd*'")
-    sh("yum --disablerepo=epel* -y update  ca-certificates")
   end
 
   def install(pkg_name, pkg_verion)
