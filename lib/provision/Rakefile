@@ -70,6 +70,7 @@ class Redhat
       f.puts('gpgkey=https://download.gocd.io/GOCD-GPG-KEY.asc')
     end
     sh("yum makecache --disablerepo='*' --enablerepo='gocd*'")
+    sh("yum --disablerepo=epel* -y update  ca-certificates")
   end
 
   def install(pkg_name, pkg_verion)
@@ -142,7 +143,7 @@ end
       addon = addon_for version
       sh('echo ''GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\"''>> /etc/default/go-server')
 
-      sh(%Q{sudo -H -u go bash -c 'mkdir -p /var/lib/go-server/addons ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
+      sh(%Q{sudo -H -u go bash -c 'mkdir -p /var/lib/go-server/addons ; rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
       sh(%Q{sudo -H -u go bash -c 'echo "db.host=localhost"  >> /etc/go/postgresqldb.properties'})
       sh(%Q{sudo -H -u go bash -c 'echo "db.port=5432"  >> /etc/go/postgresqldb.properties'})
       sh(%Q{sudo -H -u go bash -c 'echo "db.name=cruise"  >> /etc/go/postgresqldb.properties'})
