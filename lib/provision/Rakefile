@@ -115,7 +115,7 @@ end
          end
          setup_postgres_addon ENV['GO_VERSION']
        end
-       sh('service go-server start')
+       sh('/etc/init.d/go-server start')
     end
 
     task :install_agent do
@@ -133,7 +133,7 @@ end
         end
         setup_postgres_addon ENV['GO_INITIAL_VERSION']
       end
-      sh('service go-server start')
+      sh('/etc/init.d/go-server start')
       klass.new.install('go-agent', ENV['GO_INITIAL_VERSION'])
     end
 
@@ -160,7 +160,7 @@ end
     end
 
     task :start_agent do
-      sh('service go-agent start')
+      sh('/etc/init.d/go-agent start')
     end
 
     task :check_service_is_up do
