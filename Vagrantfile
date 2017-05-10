@@ -55,7 +55,7 @@ Vagrant.configure(2) do |config|
   boxes.each do |name, box_cfg|
     config.vm.define name do |vm_config|
       vm_config.vm.network "private_network", type: "dhcp"
-      vm_config.vm.boot_timeout = 600
+      vm_config.vm.boot_timeout = 1200
       vm_config.vm.synced_folder "lib", "/vagrant"
       if name =~ /ubuntu|debian/
         vm_config.vm.provision "shell", inline: "apt-get update"
