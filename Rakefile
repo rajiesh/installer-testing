@@ -110,7 +110,7 @@ def download_addons
     if UPGRADE_VERSIONS_LIST.include? myhash[index]['go_full_version']
       addon = addon_for(key['go_full_version'])
       if (!File.exists?("addons/#{addon}"))
-        sh "curl -k -o lib/addons/#{addon} #{ENV['ADDON_DOWNLOAD_URL']}/#{key['go_full_version']}/#{addon}"
+        sh "curl -L -o lib/addons/#{addon} --fail -H 'Accept: binary/octet-stream' --user '#{ENV['EXTENSIONS_USER']}:#{ENV['EXTENSIONS_PASSWORD']}'  #{ENV['ADDON_DOWNLOAD_URL']}/#{key['go_full_version']}/download?eula_accepted=true"
       end
     end
   end
