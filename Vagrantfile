@@ -69,11 +69,11 @@ Vagrant.configure(2) do |config|
         vm_config.vm.provision "shell", inline: "apt-get install -y rake ruby-json unzip git"
         vm_config.vm.provision "shell", inline: "sudo -i GO_VERSION=#{ENV['GO_VERSION']} USE_POSTGRES=#{ENV['USE_POSTGRES'] || 'No'} UPGRADE_VERSIONS_LIST=\"#{ENV['UPGRADE_VERSIONS_LIST'] || ''}\" rake --trace --rakefile /vagrant/provision/Rakefile debian:#{ENV['TEST'] || 'fresh'}"
       elsif name =~ /centos/
+        vm_config.vm.provision "shell", inline: "echo 'nameserver 8.8.8.8' >> /etc/resolv.conf"
         vm_config.vm.provision "shell", inline: "yum makecache"
         vm_config.vm.provision "shell", inline: "yum install -y centos-release-scl"
         vm_config.vm.provision "shell", inline: "yum install -y java-1.8.0-openjdk unzip git rh-ruby22-rubygem-rake"
         vm_config.vm.provision "shell", inline: "echo 'source /opt/rh/rh-ruby22/enable' > /etc/profile.d/ruby-22.sh"
-        vm_config.vm.provision "shell", inline: "echo 'nameserver 8.8.8.8' >> /etc/resolv.conf"
         vm_config.vm.provision "shell", inline: "sudo -i GO_VERSION=#{ENV['GO_VERSION']} USE_POSTGRES=#{ENV['USE_POSTGRES'] || 'No'} UPGRADE_VERSIONS_LIST=\"#{ENV['UPGRADE_VERSIONS_LIST'] || ''}\" rake --trace --rakefile /vagrant/provision/Rakefile centos:#{ENV['TEST'] || 'fresh'}"
       end
 
