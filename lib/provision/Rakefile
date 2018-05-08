@@ -21,6 +21,15 @@ require 'net/http'
 
 PIPELINE_NAME = 'testpipeline'
 
+class GoCDApiVersion
+  V1 = 'application/vnd.go.cd.v1+json'
+  V2 = 'application/vnd.go.cd.v2+json'
+  V3 = 'application/vnd.go.cd.v3+json'
+  V4 = 'application/vnd.go.cd.v4+json'
+  V5 = 'application/vnd.go.cd.v5+json'
+  V6 = 'application/vnd.go.cd.v6+json'
+end
+
 class Debian
   include Rake::DSL
 
@@ -198,11 +207,10 @@ end
         end
       end
 
-
       puts 'wait for agent to come up'
       Timeout.timeout(180) do
         loop do
-          agents = JSON.parse(open('http://localhost:8153/go/api/agents', 'Accept' => "application/vnd.go.cd.v3+json,application/vnd.go.cd.v4+json").read)['_embedded']['agents']
+          agents = JSON.parse(open('http://localhost:8153/go/api/agents', 'Accept' => agent_api_version).read)['_embedded']['agents']
 
           if agents.any? {|a| a['agent_state'] == 'Idle'}
             puts 'Agent is up'
@@ -215,7 +223,7 @@ end
     task :create_pipeline do
       url = 'http://localhost:8153/go/api/admin/pipelines'
       puts 'create a pipeline'
-      sh(%Q{curl --silent --fail --location --dump-header - -X POST -H "Accept: application/vnd.go.cd.v3+json;q=0.9,application/vnd.go.cd.v2+json;q=0.8" -H "Content-Type: application/json" --data "@/vagrant/provision/filesystem/pipeline.json" #{url}})
+      sh(%Q{curl --silent --fail --location --dump-header - -X POST -H "Accept: #{pipeline_api_version}" -H "Content-Type: application/json" --data "@/vagrant/provision/filesystem/pipeline.json" #{url}})
     end
 
     task :create_pipeline_by_config do
@@ -226,13 +234,13 @@ end
     task :unpause_pipeline do
       url = "http://localhost:8153/go/api/pipelines/#{PIPELINE_NAME}/unpause"
       puts 'unpause the pipeline'
-      sh(%Q{curl --silent --fail --location --dump-header - -X POST -H "Accept: application/vnd.go.cd.v1+json;q=0.9,application/vnd.go.cd.v1+text" -H "Confirm: true" -H "X-GoCD-Confirm: true" #{url}})
+      sh(%Q{curl --silent --fail --location --dump-header - -X POST -H "Accept: #{pipeline_pause_api_version}" -H "Confirm: true" -H "X-GoCD-Confirm: true" #{url}})
     end
 
     def trigger_pipeline
       url = "http://localhost:8153/go/api/pipelines/#{PIPELINE_NAME}/schedule"
       puts 'trigger the pipeline'
-      sh(%Q{curl --silent --fail --location --dump-header - -X POST -H "Accept: application/vnd.go.cd.v1+json;q=0.9,application/vnd.go.cd.v1+text" -H "Confirm: true" -H "X-GoCD-Confirm: true" #{url}})
+      sh(%Q{curl --silent --fail --location --dump-header - -X POST -H "Accept: #{pipeline_schedule_api_version}" -H "Confirm: true" -H "X-GoCD-Confirm: true" #{url}})
     end
 
     task :trigger_pipeline_first do
@@ -284,12 +292,60 @@ end
       raise "Pipeline was not built successfully. Wait timed out"
     end
 
+    def current_gocd_version
+      Gem::Version.new(JSON.parse(open('http://localhost:8153/go/api/version', 'Accept' => GoCDApiVersion::V1).read))
+    end
+
+    def agent_api_version
+      if current_gocd_version >= Gem::Version('16.10.0')
+        GoCDApiVersion::V4
+      else
+        GoCDApiVersion::V3
+      end
+    end
+
+    def pipeline_api_version
+      if current_gocd_version >= Gem::Version('17.12.0')
+        GoCDApiVersion::V5
+      elsif current_gocd_version >= Gem::Version('17.4.0')
+        GoCDApiVersion::V4
+      elsif current_gocd_version >= Gem::Version('16.10.0')
+        GoCDApiVersion::V3
+      elsif current_gocd_version >= Gem::Version('16.7.0')
+        GoCDApiVersion::V2
+      else
+        GoCDApiVersion::V1
+      end
+    end
+
+    def pipeline_pause_api_version
+      if current_gocd_version >= Gem::Version('18.2.0')
+        GoCDApiVersion::V1
+      else
+        'text/plain'
+      end
+    end
+
+    def pipeline_schedule_api_version
+      if current_gocd_version >= Gem::Version('18.2.0')
+        GoCDApiVersion::V1
+      else
+        'text/plain'
+      end
+    end
+
+    def dashboard_api_version
+      if current_gocd_version >= Gem::Version('15.3.0')
+        GoCDApiVersion::V1
+      end
+    end
+
     def check_pipeline_status
       begin
         Timeout.timeout(180) do
           loop do
             sleep 5
-            runs = JSON.parse(open('http://localhost:8153/go/api/dashboard', 'Accept' => 'application/vnd.go.cd.v1+json').read)
+            runs = JSON.parse(open('http://localhost:8153/go/api/dashboard', 'Accept' => dashboard_api_version).read)
 
             if runs["_embedded"]["pipeline_groups"][0]["_embedded"]["pipelines"][0]["_embedded"]["instances"][0]["_embedded"]["stages"][0]["status"] == 'Passed'
               puts 'Pipeline completed with success'
@@ -303,7 +359,7 @@ end
     end
 
     def server_version
-      versions = JSON.parse(open('http://localhost:8153/go/api/version', 'Accept' => 'application/vnd.go.cd.v1+json').read)
+      versions = JSON.parse(open('http://localhost:8153/go/api/version', 'Accept' => GoCDApiVersion::V1).read)
       "#{versions['version']}-#{versions['build_number']}"
     end
 
