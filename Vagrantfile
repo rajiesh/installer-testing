@@ -59,14 +59,14 @@ Vagrant.configure(2) do |config|
       vm_config.vm.synced_folder "lib", "/vagrant"
       if name =~ /ubuntu|debian/
         vm_config.vm.provision "shell", inline: "apt-get update"
-        vm_config.vm.provision "shell", inline: "apt-get install -y apt-transport-https"
+        vm_config.vm.provision "shell", inline: "apt-get install -y apt-transport-https curl"
 
         configure_ppa(vm_config) if name =~ /(ubuntu-(12|14|16))/
         configure_jessie_backports(vm_config) if name =~ /debian-8/
         configure_squeeze(vm_config) if name =~ /debian-7/
 
 
-        vm_config.vm.provision "shell", inline: "apt-get install -y rake ruby-json unzip git"
+        vm_config.vm.provision "shell", inline: "apt-get install -y rake ruby-json unzip git curl"
         vm_config.vm.provision "shell", inline: "sudo -i GO_VERSION=#{ENV['GO_VERSION']} USE_POSTGRES=#{ENV['USE_POSTGRES'] || 'No'} UPGRADE_VERSIONS_LIST=\"#{ENV['UPGRADE_VERSIONS_LIST'] || ''}\" rake --trace --rakefile /vagrant/provision/Rakefile debian:#{ENV['TEST'] || 'fresh'}"
       elsif name =~ /centos/
         vm_config.vm.provision "shell", inline: "echo 'nameserver 8.8.8.8' >> /etc/resolv.conf"
@@ -95,21 +95,10 @@ Vagrant.configure(2) do |config|
     end
   end
 
-#   if Vagrant.has_plugin?('vagrant-proxyconf')
-#     # use ip 10.0.2.2 for virtualbox
-#     config.proxy.http     = 'http://10.0.2.2:3128/'
-#     config.proxy.https    = 'http://10.0.2.2:3128/'
-#     config.proxy.no_proxy = 'localhost,127.0.0.1,172.16.18.1,172.16.38.21,10.0.2.2'
-#   end
-#
-#   if Vagrant.has_plugin?('vagrant-ohai')
-#    config.ohai.primary_nic = "eth1"
-#   end
-
-   if Vagrant.has_plugin?('vagrant-cachier')
-      config.cache.scope = :box
-      config.cache.enable :apt
-      config.cache.enable :apt_lists
-      config.cache.enable :yum
-   end
+  if Vagrant.has_plugin?('vagrant-cachier')
+    config.cache.scope = :box
+    config.cache.enable :apt
+    config.cache.enable :apt_lists
+    config.cache.enable :yum
+  end
 end
