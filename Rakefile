@@ -89,7 +89,7 @@ class DebianDistro < Distro
 
   def install_jdk
     [
-      "echo 'deb http://http.debian.net/debian jessie-backports main' | sudo tee /etc/apt/sources.list.d/jessie-backports.list",
+      "echo 'deb http://http.debian.net/debian jessie-backports main' | tee /etc/apt/sources.list.d/jessie-backports.list",
       "apt-get update",
       "apt-get -t jessie-backports install -y openjdk-8-jre",
     ]
