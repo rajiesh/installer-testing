@@ -26,8 +26,8 @@ STABLE_RELEASES_JSON_URL = ENV['STABLE_RELEASES_JSON_URL'] || 'https://download.
 UPGRADE_VERSIONS_LIST = ENV['UPGRADE_VERSIONS_LIST'] || "16.9.0-4001, 16.12.0-4352, 17.1.0-4511"
 
 def partition(things)
-  things               = (things || []).sort
-  total_workers        = ENV['GO_JOB_RUN_COUNT'] ? ENV['GO_JOB_RUN_COUNT'].to_i : 1
+  things = (things || []).sort
+  total_workers = ENV['GO_JOB_RUN_COUNT'] ? ENV['GO_JOB_RUN_COUNT'].to_i : 1
   current_worker_index = ENV['GO_JOB_RUN_INDEX'] ? ENV['GO_JOB_RUN_INDEX'].to_i : 1
 
   return [] if things.empty?
@@ -48,6 +48,7 @@ end
 
 class Distro
   attr_reader :name, :version
+
   def initialize(name, version)
     @name = name
     @version = version
@@ -65,7 +66,7 @@ class Distro
     box_name <=> other.box_name
   end
 
-  def run_test(test_type='fresh', env={})
+  def run_test(test_type = 'fresh', env = {})
     env_args = env.collect {|k, v| "'#{k}=#{v}'"}.join(' ')
     %Q{bash -lc "rake --trace --rakefile /vagrant/provision/Rakefile #{distro}:#{test_type} #{env_args}"}
   end
@@ -82,22 +83,22 @@ class DebianDistro < Distro
 
   def prepare_commands
     [
-      "apt-get update",
-      "apt-get install -y apt-transport-https curl",
+        "apt-get update",
+        "apt-get install -y apt-transport-https curl",
     ]
   end
 
   def install_jdk
     [
-      "/bin/bash -lc 'echo deb http://http.debian.net/debian jessie-backports main > /etc/apt/sources.list.d/jessie-backports.list'",
-      "apt-get update",
-      "apt-get -t jessie-backports install -y openjdk-8-jre",
+        "/bin/bash -lc 'echo deb http://http.debian.net/debian jessie-backports main > /etc/apt/sources.list.d/jessie-backports.list'",
+        "apt-get update",
+        "apt-get -t jessie-backports install -y openjdk-8-jre",
     ]
   end
-  
+
   def install_build_tools
     [
-      "apt-get install -y rake ruby-json unzip git curl",
+        "apt-get install -y rake ruby-json unzip git curl",
     ]
   end
 
@@ -107,10 +108,10 @@ class UbuntuDistro < DebianDistro
 
   def install_jdk
     [
-      "apt-get install -y software-properties-common python-software-properties",
-      "add-apt-repository ppa:openjdk-r/ppa",
-      "apt-get update",
-      "apt-get install -y openjdk-8-jre"
+        "apt-get install -y software-properties-common python-software-properties",
+        "add-apt-repository ppa:openjdk-r/ppa",
+        "apt-get update",
+        "apt-get install -y openjdk-8-jre"
     ]
   end
 end
@@ -126,7 +127,7 @@ class CentosDistro < Distro
 
   def prepare_commands
     [
-      "yum makecache"
+        "yum makecache"
     ]
   end
 
@@ -136,9 +137,9 @@ class CentosDistro < Distro
 
   def install_build_tools
     [
-      "yum install -y centos-release-scl",
-      "yum install -y unzip git rh-ruby22-rubygem-rake",
-      "/bin/bash -lc 'echo source /opt/rh/rh-ruby22/enable > /etc/profile.d/ruby-22.sh'"
+        "yum install -y centos-release-scl",
+        "yum install -y unzip git rh-ruby22-rubygem-rake",
+        "/bin/bash -lc 'echo source /opt/rh/rh-ruby22/enable > /etc/profile.d/ruby-22.sh'"
     ]
   end
 end
@@ -157,7 +158,7 @@ def boot_container(box)
   sh "docker pull #{box.image}"
 
   mounts = {
-    "#{pwd}/lib" => '/vagrant'
+      "#{pwd}/lib" => '/vagrant'
   }
 
   box.cache_dirs.each do |cache_dir|
@@ -167,7 +168,7 @@ def boot_container(box)
   end
 
   sh %Q{docker run #{mounts.collect {|k, v| "--volume #{k}:#{v}"}.join(' ')} --rm -d -it --name #{box.box_name} #{box.image} /bin/bash}
-  
+
   box.prepare_commands.each do |each_command|
     sh "docker exec #{box.box_name} #{each_command}"
   end
@@ -179,16 +180,16 @@ def boot_container(box)
   box.install_build_tools.each do |each_command|
     sh "docker exec #{box.box_name} #{each_command}"
   end
-end 
+end
 
 task :test_installers do
   boxes = [
-    UbuntuDistro.new('ubuntu', '12.04'),
-    UbuntuDistro.new('ubuntu', '14.04'),
-    UbuntuDistro.new('ubuntu', '16.04'),
-    DebianDistro.new('debian', '8'),
-    CentosDistro.new('centos', '6'),
-    CentosDistro.new('centos', '7'),
+      UbuntuDistro.new('ubuntu', '12.04'),
+      UbuntuDistro.new('ubuntu', '14.04'),
+      UbuntuDistro.new('ubuntu', '16.04'),
+      DebianDistro.new('debian', '8'),
+      CentosDistro.new('centos', '6'),
+      CentosDistro.new('centos', '7'),
   ]
 
   partition(boxes).each do |box|
@@ -207,14 +208,14 @@ end
 
 task :test_installers_w_postgres do
   postgres_boxes = [
-    UbuntuDistro.new('ubuntu', '14.04'), 
-    CentosDistro.new('centos', '7')
+      UbuntuDistro.new('ubuntu', '14.04'),
+      CentosDistro.new('centos', '7')
   ]
 
   partition(postgres_boxes).each do |box|
     boot_container(box)
     begin
-      env = {GO_VERSION: full_version, USE_POSTGRES: 'yes'}
+      env = {GO_VERSION: full_version, USE_POSTGRES: true}
       sh "docker exec #{box.box_name} #{box.run_test('fresh', env)}"
     rescue => e
       raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
@@ -226,12 +227,12 @@ end
 
 task :upgrade_tests do
   upgrade_boxes = [
-    UbuntuDistro.new('ubuntu', '12.04'),
-    UbuntuDistro.new('ubuntu', '14.04'),
-    UbuntuDistro.new('ubuntu', '16.04'),
-    DebianDistro.new('debian', '8'),
-    CentosDistro.new('centos', '6'),
-    CentosDistro.new('centos', '7'),
+      UbuntuDistro.new('ubuntu', '12.04'),
+      UbuntuDistro.new('ubuntu', '14.04'),
+      UbuntuDistro.new('ubuntu', '16.04'),
+      DebianDistro.new('debian', '8'),
+      CentosDistro.new('centos', '6'),
+      CentosDistro.new('centos', '7'),
   ]
 
   partition(upgrade_boxes).each do |box|
@@ -252,13 +253,13 @@ end
 task :upgrade_tests_w_postgres do
   download_addons
   postgres_upgrade_boxes = [
-    UbuntuDistro.new('ubuntu', '14.04'),
-    CentosDistro.new('centos', '7'),
+      UbuntuDistro.new('ubuntu', '14.04'),
+      CentosDistro.new('centos', '7'),
   ]
   partition(postgres_upgrade_boxes).each do |box|
     boot_container(box)
     begin
-      env = {GO_VERSION: full_version, UPGRADE_VERSIONS_LIST: from_version, USE_POSTGRES: 'yes'}
+      env = {GO_VERSION: full_version, UPGRADE_VERSIONS_LIST: from_version, USE_POSTGRES: true}
       sh "docker exec #{box.box_name} #{box.run_test('upgrade_test', env)}"
     rescue => e
       raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
@@ -288,5 +289,5 @@ end
 
 def addon_for(core)
   versions_map = JSON.parse(File.read('./lib/addons/addon_builds.json'))
-  versions_map.select{|v| v['gocd_version'] == core}.last['addons']['postgresql']
+  versions_map.select {|v| v['gocd_version'] == core}.last['addons']['postgresql']
 end
