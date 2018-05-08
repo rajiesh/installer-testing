@@ -269,10 +269,10 @@ end
 
     def check_pipeline_in_cctray label
       begin
-        timeout(180) do
-          while (true) do
+        Timeout.timeout(180) do
+          loop do
             response = open("http://localhost:8153/go/cctray.xml").read
-            if response.include? %Q(<Project name="#{PIPELINE_NAME} :: defaultStage" activity="Sleeping" lastBuildStatus="Success" lastBuildLabel="#{label}") then
+            if response.include? %Q(<Project name="#{PIPELINE_NAME} :: defaultStage" activity="Sleeping" lastBuildStatus="Success" lastBuildLabel="#{label}")
               puts "Pipeline completed successfully"
               break
             end
@@ -285,9 +285,9 @@ end
 
     def check_pipeline_status
       begin
-        timeout(180) do
-          while (true) do
-            sleep 60
+        Timeout.timeout(180) do
+          loop do
+            sleep 5
             runs = JSON.parse(open('http://localhost:8153/go/api/dashboard', 'Accept' => 'application/vnd.go.cd.v1+json').read)
 
             if runs["_embedded"]["pipeline_groups"][0]["_embedded"]["pipelines"][0]["_embedded"]["instances"][0]["_embedded"]["stages"][0]["status"] == 'Passed'
@@ -296,7 +296,7 @@ end
             end
           end
         end
-      rescue Timeout::Error => e
+      rescue Timeout::Error
         raise 'Pipeline was not built successfully'
       end
     end
