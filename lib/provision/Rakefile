@@ -293,7 +293,7 @@ end
     end
 
     def current_gocd_version
-      Gem::Version.new(JSON.parse(open('http://localhost:8153/go/api/version', 'Accept' => GoCDApiVersion::V1).read))
+      Gem::Version.new(JSON.parse(open('http://localhost:8153/go/api/version', 'Accept' => GoCDApiVersion::V1).read)['version'])
     end
 
     def agent_api_version
