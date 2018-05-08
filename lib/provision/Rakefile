@@ -22,7 +22,7 @@ require 'net/http'
 PIPELINE_NAME = 'testpipeline'
 
 class Debian
-  include Rake::DSL if defined?(Rake::DSL)
+  include Rake::DSL
 
   def repo
     open('/etc/apt/sources.list.d/gocd.list', 'w') do |f|
@@ -53,6 +53,7 @@ class Debian
 end
 
 class Redhat
+  include Rake::DSL
 
   def repo
     sh("curl --silent --fail --location https://download.gocd.org/gocd.repo -o /etc/yum.repos.d/gocd.repo")
