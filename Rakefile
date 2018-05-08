@@ -196,6 +196,8 @@ task :test_installers do
     begin
       env = {GO_VERSION: full_version}
       sh "docker exec #{box.box_name} #{box.run_test('fresh', env)}"
+    rescue => e
+      raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
     ensure
       sh "docker stop #{box.box_name}"
     end
@@ -214,6 +216,8 @@ task :test_installers_w_postgres do
     begin
       env = {GO_VERSION: full_version, USE_POSTGRES: 'yes'}
       sh "docker exec #{box.box_name} #{box.run_test('fresh', env)}"
+    rescue => e
+      raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
     ensure
       sh "docker stop #{box.box_name}"
     end
@@ -236,6 +240,8 @@ task :upgrade_tests do
       begin
         env = {GO_VERSION: full_version, UPGRADE_VERSIONS_LIST: from_version}
         sh "docker exec #{box.box_name} #{box.run_test('upgrade_test', env)}"
+      rescue => e
+        raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
       ensure
         sh "docker stop #{box.box_name}"
       end
@@ -254,6 +260,8 @@ task :upgrade_tests_w_postgres do
     begin
       env = {GO_VERSION: full_version, UPGRADE_VERSIONS_LIST: from_version, USE_POSTGRES: 'yes'}
       sh "docker exec #{box.box_name} #{box.run_test('upgrade_test', env)}"
+    rescue => e
+      raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
     ensure
       sh "docker stop #{box.box_name}"
     end
