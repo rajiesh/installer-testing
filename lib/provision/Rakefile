@@ -61,7 +61,7 @@ class Debian
     sh("service postgresql status || service postgresql start")
     sh(%Q{su - postgres -c bash -c 'createdb -U postgres cruise'})
     sh(%Q{su - postgres -c bash -c 'sed -i 's/peer/md5/g' /etc/postgresql/9.3/main/pg_hba.conf'})
-    sh(%Q{su - postgres -c bash -c psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"})
+    sh(%Q{su - postgres -c /bin/bash -c "psql -c \\"ALTER USER postgres WITH PASSWORD 'postgres'\\";"})
     sh("service postgresql restart")
   end
 
@@ -89,7 +89,7 @@ class Redhat
     sh(%Q{su - postgres -c bash -c 'initdb -D /var/lib/pgsql/data'})
     sh("service postgresql status || service postgresql start")
     sh(%Q{su - postgres -c bash -c 'sed -i 's/peer/md5/g' /var/lib/pgsql/data/pg_hba.conf'})
-    sh(%Q{su - postgres -c bash -c psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"})
+    sh(%Q{su - postgres -c /bin/bash -c "psql -c \\"ALTER USER postgres WITH PASSWORD 'postgres'\\";"})
     sh("service postgresql restart")
     sh(%Q{su - postgres -c bash -c 'createdb -U postgres cruise'})
   end
