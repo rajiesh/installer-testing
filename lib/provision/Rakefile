@@ -58,9 +58,9 @@ class Debian
   def setup_postgres
     sh("apt-get install -y postgresql-9.3")
     sh("apt-get install -y postgresql-contrib-9.3")
-    sh(%Q{sudo -H -u postgres bash -c 'createdb -U postgres cruise'})
-    sh(%Q{sudo -H -u postgres bash -c 'sed -i 's/peer/md5/g' /etc/postgresql/9.3/main/pg_hba.conf'})
-    sh(%Q{sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"})
+    sh(%Q{su - postgres bash -c 'createdb -U postgres cruise'})
+    sh(%Q{su - postgres bash -c 'sed -i 's/peer/md5/g' /etc/postgresql/9.3/main/pg_hba.conf'})
+    sh(%Q{su - postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"})
     sh("/etc/init.d/postgresql restart")
   end
 
@@ -85,12 +85,12 @@ class Redhat
   def setup_postgres
     sh("yum install --assumeyes postgresql-server")
     sh("yum install --assumeyes postgresql-contrib")
-    sh(%Q{sudo -H -u postgres bash -c 'initdb -D /var/lib/pgsql/data'})
+    sh(%Q{su - postgres bash -c 'initdb -D /var/lib/pgsql/data'})
     sh("service postgresql start")
-    sh(%Q{sudo -H -u postgres bash -c 'sed -i 's/peer/md5/g' /var/lib/pgsql/data/pg_hba.conf'})
-    sh(%Q{sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"})
+    sh(%Q{su - postgres bash -c 'sed -i 's/peer/md5/g' /var/lib/pgsql/data/pg_hba.conf'})
+    sh(%Q{su - postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"})
     sh("service postgresql restart")
-    sh(%Q{sudo -H -u postgres bash -c 'createdb -U postgres cruise'})
+    sh(%Q{su - postgres bash -c 'createdb -U postgres cruise'})
   end
 
 end
@@ -144,18 +144,18 @@ end
       addon = addon_for version
       sh('echo ' 'GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\"' '>> /etc/default/go-server')
 
-      sh(%Q{sudo -H -u go bash -c 'mkdir -p /var/lib/go-server/addons ; rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
-      sh(%Q{sudo -H -u go bash -c 'echo "db.host=localhost"  >> /etc/go/postgresqldb.properties'})
-      sh(%Q{sudo -H -u go bash -c 'echo "db.port=5432"  >> /etc/go/postgresqldb.properties'})
-      sh(%Q{sudo -H -u go bash -c 'echo "db.name=cruise"  >> /etc/go/postgresqldb.properties'})
-      sh(%Q{sudo -H -u go bash -c 'echo "db.user=postgres"  >> /etc/go/postgresqldb.properties'})
-      sh(%Q{sudo -H -u go bash -c 'echo "db.password=postgres"  >> /etc/go/postgresqldb.properties'})
+      sh(%Q{su - go bash -c 'mkdir -p /var/lib/go-server/addons ; rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
+      sh(%Q{su - go bash -c 'echo "db.host=localhost"  >> /etc/go/postgresqldb.properties'})
+      sh(%Q{su - go bash -c 'echo "db.port=5432"  >> /etc/go/postgresqldb.properties'})
+      sh(%Q{su - go bash -c 'echo "db.name=cruise"  >> /etc/go/postgresqldb.properties'})
+      sh(%Q{su - go bash -c 'echo "db.user=postgres"  >> /etc/go/postgresqldb.properties'})
+      sh(%Q{su - go bash -c 'echo "db.password=postgres"  >> /etc/go/postgresqldb.properties'})
     end
 
     task :change_postgres_addons_jar do
       if ENV['USE_POSTGRES']
         addon = addon_for ENV['GO_VERSION']
-        sh(%Q{sudo -H -u go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
+        sh(%Q{su - go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
         sh("/etc/init.d/go-server restart")
       end
     end
