@@ -55,6 +55,7 @@ class Distro
   def initialize(name, version)
     @name = name
     @version = version
+    @random_string = SecureRandom.hex(4)
   end
 
   def image
@@ -62,7 +63,7 @@ class Distro
   end
 
   def box_name
-    "#{name}-#{version}"
+    "#{name}-#{version}-#{@random_string}"
   end
 
   def <=>(other)
