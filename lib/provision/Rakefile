@@ -281,20 +281,19 @@ end
       raise "Pipeline creation failed with error: #{response.body}" unless response.is_a?(Net::HTTPCreated)
     end
 
-    def check_pipeline_in_cctray label
-      begin
-        Timeout.timeout(180) do
-          loop do
-            response = open("http://localhost:8153/go/cctray.xml").read
-            if response.include? %Q(<Project name="#{PIPELINE_NAME} :: defaultStage" activity="Sleeping" lastBuildStatus="Success" lastBuildLabel="#{label}")
-              puts "Pipeline completed successfully"
-              break
-            end
+    def check_pipeline_in_cctray(label)
+      cctray_response = nil
+      Timeout.timeout(180) do
+        loop do
+          cctray_response = open("http://localhost:8153/go/cctray.xml").read
+          if cctray_response.include? %Q(<Project name="#{PIPELINE_NAME} :: defaultStage" activity="Sleeping" lastBuildStatus="Success" lastBuildLabel="#{label}")
+            puts "Pipeline completed successfully"
+            break
           end
         end
       end
     rescue Timeout::Error
-      raise "Pipeline was not built successfully. Wait timed out"
+      raise "Pipeline was not built successfully. Wait timed out. The CCTray response was: #{cctray_response}"
     end
 
     def current_gocd_version
@@ -346,21 +345,20 @@ end
     end
 
     def check_pipeline_status
-      begin
-        Timeout.timeout(180) do
-          loop do
-            sleep 5
-            runs = JSON.parse(open('http://localhost:8153/go/api/dashboard', 'Accept' => dashboard_api_version).read)
+      dashboard_response = nil
+      Timeout.timeout(180) do
+        loop do
+          sleep 5
+          dashboard_response = JSON.parse(open('http://localhost:8153/go/api/dashboard', 'Accept' => dashboard_api_version).read)
 
-            if runs["_embedded"]["pipeline_groups"][0]["_embedded"]["pipelines"][0]["_embedded"]["instances"][0]["_embedded"]["stages"][0]["status"] == 'Passed'
-              puts 'Pipeline completed with success'
-              break
-            end
+          if dashboard_response["_embedded"]["pipeline_groups"][0]["_embedded"]["pipelines"][0]["_embedded"]["instances"][0]["_embedded"]["stages"][0]["status"] == 'Passed'
+            puts 'Pipeline completed with success'
+            break
           end
         end
-      rescue Timeout::Error
-        raise 'Pipeline was not built successfully'
       end
+    rescue Timeout::Error
+      raise "Pipeline was not built successfully. The dashboard response was: #{dashboard_response}"
     end
 
     def server_version
