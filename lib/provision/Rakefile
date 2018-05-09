@@ -87,11 +87,11 @@ class Redhat
     sh("yum install --assumeyes postgresql-server")
     sh("yum install --assumeyes postgresql-contrib")
     sh(%Q{su - postgres -c bash -c 'initdb -D /var/lib/pgsql/data'})
-    sh("service postgresql status || service postgresql start")
+    sh(%Q{su - postgres -c bash -c 'pg_ctl -D /var/lib/pgsql/data -l /var/lib/pgsql/data/logfile start'})
     sh(%Q{su - postgres -c bash -c 'sed -i 's/peer/md5/g' /var/lib/pgsql/data/pg_hba.conf'})
     sh(%Q{su - postgres -c /bin/bash -c "psql -c \\"ALTER USER postgres WITH PASSWORD 'postgres'\\";"})
-    sh("service postgresql restart")
     sh(%Q{su - postgres -c bash -c 'createdb -U postgres cruise'})
+    sh(%Q{su - postgres -c bash -c 'pg_ctl -D /var/lib/pgsql/data -l /var/lib/pgsql/data/logfile restart'})
   end
 
 end
@@ -108,7 +108,7 @@ end
     end
 
     task :install_server do
-      sh('service go-server stop 2>/dev/null || true')
+      sh('/etc/init.d/go-server stop 2>/dev/null || true')
       klass.new.install('go-server', ENV['GO_VERSION'])
       if ENV['USE_POSTGRES']
         unless @postgres_setup_done
@@ -117,7 +117,7 @@ end
         end
         setup_postgres_addon ENV['GO_VERSION']
       end
-      sh('service go-server start')
+      sh('/etc/init.d/go-server start')
     end
 
     task :install_agent do
@@ -135,13 +135,13 @@ end
         end
         setup_postgres_addon ENV['GO_INITIAL_VERSION']
       end
-      sh('service go-server start')
+      sh('/etc/init.d/go-server start')
       klass.new.install('go-agent', ENV['GO_INITIAL_VERSION'])
     end
 
     def setup_postgres_addon(version)
       p 'Setting up postgres addon'
-      sh('service go-server stop 2>/dev/null || true')
+      sh('/etc/init.d/go-server stop 2>/dev/null || true')
       addon = addon_for version
       sh('echo ' 'GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\"' '>> /etc/default/go-server')
 
@@ -157,12 +157,12 @@ end
       if ENV['USE_POSTGRES']
         addon = addon_for ENV['GO_VERSION']
         sh(%Q{su - go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
-        sh("service go-server restart")
+        sh("/etc/init.d/go-server restart")
       end
     end
 
     task :start_agent do
-      sh('service go-agent start')
+      sh('/etc/init.d/go-agent start')
     end
 
     task :check_service_is_up do
