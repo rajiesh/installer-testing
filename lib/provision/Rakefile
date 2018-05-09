@@ -58,11 +58,11 @@ class Debian
   def setup_postgres
     sh("apt-get install -y postgresql-9.3")
     sh("apt-get install -y postgresql-contrib-9.3")
-    sh("service postgresql status || service postgresql start")
+    sh("/etc/init.d/postgresql status || /etc/init.d/postgresql start")
     sh(%Q{su - postgres -c bash -c 'createdb -U postgres cruise'})
     sh(%Q{su - postgres -c bash -c 'sed -i 's/peer/md5/g' /etc/postgresql/9.3/main/pg_hba.conf'})
     sh(%Q{su - postgres -c /bin/bash -c "psql -c \\"ALTER USER postgres WITH PASSWORD 'postgres'\\";"})
-    sh("service postgresql restart")
+    sh("/etc/init.d/postgresql restart")
   end
 
 end
