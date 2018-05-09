@@ -50,12 +50,12 @@ def partition(things)
 end
 
 class Distro
-  attr_reader :name, :version
+  attr_reader :name, :version, :task_name
 
-  def initialize(name, version)
+  def initialize(name, version, task_name)
     @name = name
     @version = version
-    @random_string = SecureRandom.hex(4)
+    @task_name = task_name
   end
 
   def image
@@ -63,7 +63,7 @@ class Distro
   end
 
   def box_name
-    "#{name}-#{version}-#{@random_string}"
+    "#{name}-#{version}-#{task_name}"
   end
 
   def <=>(other)
@@ -187,14 +187,14 @@ def boot_container(box)
   end
 end
 
-task :test_installers do
+task :test_installers do |t|
   boxes = [
-      UbuntuDistro.new('ubuntu', '12.04'),
-      UbuntuDistro.new('ubuntu', '14.04'),
-      UbuntuDistro.new('ubuntu', '16.04'),
-      DebianDistro.new('debian', '8'),
-      CentosDistro.new('centos', '6'),
-      CentosDistro.new('centos', '7'),
+      UbuntuDistro.new('ubuntu', '12.04', t.name),
+      UbuntuDistro.new('ubuntu', '14.04', t.name),
+      UbuntuDistro.new('ubuntu', '16.04', t.name),
+      DebianDistro.new('debian', '8', t.name),
+      CentosDistro.new('centos', '6', t.name),
+      CentosDistro.new('centos', '7', t.name),
   ]
 
   partition(boxes).each do |box|
@@ -211,10 +211,10 @@ task :test_installers do
 end
 
 
-task :test_installers_w_postgres do
+task :test_installers_w_postgres do |t|
   postgres_boxes = [
-      UbuntuDistro.new('ubuntu', '14.04'),
-      CentosDistro.new('centos', '7')
+      UbuntuDistro.new('ubuntu', '14.04', t.name),
+      CentosDistro.new('centos', '7', t.name),
   ]
 
   partition(postgres_boxes).each do |box|
@@ -230,14 +230,14 @@ task :test_installers_w_postgres do
   end
 end
 
-task :upgrade_tests do
+task :upgrade_tests do |t|
   upgrade_boxes = [
-      UbuntuDistro.new('ubuntu', '12.04'),
-      UbuntuDistro.new('ubuntu', '14.04'),
-      UbuntuDistro.new('ubuntu', '16.04'),
-      DebianDistro.new('debian', '8'),
-      CentosDistro.new('centos', '6'),
-      CentosDistro.new('centos', '7'),
+      UbuntuDistro.new('ubuntu', '12.04', t.name),
+      UbuntuDistro.new('ubuntu', '14.04', t.name),
+      UbuntuDistro.new('ubuntu', '16.04', t.name),
+      DebianDistro.new('debian', '8', t.name),
+      CentosDistro.new('centos', '6', t.name),
+      CentosDistro.new('centos', '7', t.name),
   ]
 
   partition(upgrade_boxes).each do |box|
@@ -255,11 +255,11 @@ task :upgrade_tests do
   end
 end
 
-task :upgrade_tests_w_postgres do
+task :upgrade_tests_w_postgres do |t|
   download_addons
   postgres_upgrade_boxes = [
-      UbuntuDistro.new('ubuntu', '14.04'),
-      CentosDistro.new('centos', '7'),
+      UbuntuDistro.new('ubuntu', '14.04', t.name),
+      CentosDistro.new('centos', '7', t.name),
   ]
   partition(postgres_upgrade_boxes).each do |box|
     boot_container(box)
