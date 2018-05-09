@@ -14,6 +14,9 @@
 # limitations under the License.
 ##########################################################################
 
+$stdout.sync = true
+$stderr.sync = true
+
 require 'json'
 require 'timeout'
 require 'fileutils'
