@@ -83,6 +83,7 @@ class DebianDistro < Distro
 
   def prepare_commands
     [
+        "bash -lc 'rm -rf /etc/apt/apt.conf.d/docker-clean'",
         "apt-get update",
         "apt-get install -y apt-transport-https curl",
     ]
