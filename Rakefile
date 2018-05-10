@@ -218,7 +218,7 @@ end
 
 task :test_installers_w_postgres do |t|
   postgres_boxes = [
-      # UbuntuDistro.new('ubuntu', '14.04', t.name),
+      UbuntuDistro.new('ubuntu', '16.04', t.name),
       CentosDistro.new('centos', '7', t.name),
   ]
 
@@ -267,16 +267,24 @@ task :upgrade_tests_w_postgres do |t|
       CentosDistro.new('centos', '7', t.name),
   ]
   partition(postgres_upgrade_boxes).each do |box|
-    boot_container(box)
-    begin
-      env = {GO_VERSION: full_version, UPGRADE_VERSIONS_LIST: from_version, USE_POSTGRES: true}
-      sh "docker exec #{box.container_name} #{box.run_test('upgrade_test', env)}"
-    rescue => e
-      raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
-    ensure
-      sh "docker stop #{box.container_name}"
+    UPGRADE_VERSIONS_LIST.split(/\s*,\s*/).each do |from_version|
+      boot_container(box)
+      begin
+        env = {GO_VERSION: full_version, UPGRADE_VERSIONS_LIST: from_version, USE_POSTGRES: true}
+        sh "docker exec #{box.container_name} #{box.run_test('upgrade_test', env)}"
+      rescue => e
+        raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
+      ensure
+        sh "docker stop #{box.container_name}"
+      end
     end
   end
+end
+
+task :verify_osx_signer do
+  sh "curl -L -o go-server-#{full_version}-osx.zip --fail  https://download.gocd.org/experimental/binaries/#{full_version}/osx/go-server-#{full_version}-osx.zip"
+  sh "unzip go-server-#{full_version}-osx.zip"
+  sh "codesign --verify --verbose Go\\ Server.app"
 end
 
 def download_addons
