@@ -218,7 +218,7 @@ end
 
 task :test_installers_w_postgres do |t|
   postgres_boxes = [
-      UbuntuDistro.new('ubuntu', '16.04', t.name),
+      #UbuntuDistro.new('ubuntu', '16.04', t.name),
       CentosDistro.new('centos', '7', t.name),
   ]
 
@@ -263,7 +263,7 @@ end
 task :upgrade_tests_w_postgres do |t|
   download_addons
   postgres_upgrade_boxes = [
-      UbuntuDistro.new('ubuntu', '14.04', t.name),
+      #UbuntuDistro.new('ubuntu', '14.04', t.name),
       CentosDistro.new('centos', '7', t.name),
   ]
   partition(postgres_upgrade_boxes).each do |box|
