@@ -177,7 +177,7 @@ def boot_container(box)
     mounts[host_dir] = cache_dir
   end
 
-  sh %Q{docker run #{mounts.collect {|k, v| "--volume #{k}:#{v}"}.join(' ')} --rm -d -it --name #{box.container_name} #{box.image} /bin/bash}
+  sh %Q{docker run #{mounts.collect {|k, v| "--volume #{k}:#{v}"}.join(' ')} --rm -d -it --name #{box.container_name} #{box.image} sleep 3600}
 
   box.prepare_commands.each do |each_command|
     sh "docker exec #{box.container_name} #{each_command}"
