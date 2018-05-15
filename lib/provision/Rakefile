@@ -274,7 +274,7 @@ end
       url = "http://localhost:8153/go/tab/admin/pipelines/#{PIPELINE_NAME}.json"
       uri = URI(url)
       request = Net::HTTP::Post.new(uri.path)
-      request.set_form_data({"scm" => "git", "url" => "https://github.com/agoyal-git/testrepo.git", "builder" => "exec", "command" => "ls"})
+      request.set_form_data({"scm" => "git", "url" => "https://github.com/gocd/installer-testing", "builder" => "exec", "command" => "ls"})
       response = Net::HTTP.start(uri.host, uri.port) do |http|
         http.request(request)
       end
@@ -284,13 +284,17 @@ end
 
     def check_pipeline_in_cctray(label)
       cctray_response = nil
-      Timeout.timeout(180) do
+      Timeout.timeout(300) do
         loop do
           cctray_response = open("http://localhost:8153/go/cctray.xml").read
+          status = cctray_response.match(/lastBuildStatus="(\w+)"/)
+          puts "Pipeline build status #{status.captures}" if status
+
           if cctray_response.include? %Q(<Project name="#{PIPELINE_NAME} :: defaultStage" activity="Sleeping" lastBuildStatus="Success" lastBuildLabel="#{label}")
             puts "Pipeline completed successfully"
             break
           end
+          sleep 2
         end
       end
     rescue Timeout::Error
