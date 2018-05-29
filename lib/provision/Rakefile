@@ -24,15 +24,15 @@ require 'net/http'
 require 'rubygems'
 require 'rubygems/version'
 
-PIPELINE_NAME = 'testpipeline'
+PIPELINE_NAME = 'testpipeline'.freeze
 
 class GoCDApiVersion
-  V1 = 'application/vnd.go.cd.v1+json'
-  V2 = 'application/vnd.go.cd.v2+json'
-  V3 = 'application/vnd.go.cd.v3+json'
-  V4 = 'application/vnd.go.cd.v4+json'
-  V5 = 'application/vnd.go.cd.v5+json'
-  V6 = 'application/vnd.go.cd.v6+json'
+  V1 = 'application/vnd.go.cd.v1+json'.freeze
+  V2 = 'application/vnd.go.cd.v2+json'.freeze
+  V3 = 'application/vnd.go.cd.v3+json'.freeze
+  V4 = 'application/vnd.go.cd.v4+json'.freeze
+  V5 = 'application/vnd.go.cd.v5+json'.freeze
+  V6 = 'application/vnd.go.cd.v6+json'.freeze
 end
 
 class Debian
@@ -43,8 +43,8 @@ class Debian
       f.puts('deb https://download.gocd.org /')
       f.puts('deb https://download.gocd.org/experimental /')
     end
-    sh("curl --silent --fail --location https://download.gocd.org/GOCD-GPG-KEY.asc | apt-key add -")
-    sh("apt-get update")
+    sh('curl --silent --fail --location https://download.gocd.org/GOCD-GPG-KEY.asc | apt-key add -')
+    sh('apt-get update')
   end
 
   def install(pkg_name, pkg_version)
@@ -56,22 +56,21 @@ class Debian
   end
 
   def setup_postgres
-    sh("apt-get install -y postgresql-9.3")
-    sh("apt-get install -y postgresql-contrib-9.3")
-    sh("service postgresql status || service postgresql start")
-    sh(%Q{su - postgres -c bash -c 'createdb -U postgres cruise'})
-    sh(%Q{su - postgres -c bash -c 'sed -i 's/peer/md5/g' /etc/postgresql/9.3/main/pg_hba.conf'})
-    sh(%Q{su - postgres -c /bin/bash -c "psql -c \\"ALTER USER postgres WITH PASSWORD 'postgres'\\";"})
-    sh("service postgresql restart")
+    sh('apt-get install -y postgresql-9.3')
+    sh('apt-get install -y postgresql-contrib-9.3')
+    sh('service postgresql status || service postgresql start')
+    sh(%(su - postgres -c bash -c 'createdb -U postgres cruise'))
+    sh(%(su - postgres -c bash -c 'sed -i 's/peer/md5/g' /etc/postgresql/9.3/main/pg_hba.conf'))
+    sh(%(su - postgres -c /bin/bash -c "psql -c \\"ALTER USER postgres WITH PASSWORD 'postgres'\\";"))
+    sh('service postgresql restart')
   end
-
 end
 
 class Redhat
   include Rake::DSL
 
   def repo
-    sh("curl --silent --fail --location https://download.gocd.org/gocd.repo -o /etc/yum.repos.d/gocd.repo")
+    sh('curl --silent --fail --location https://download.gocd.org/gocd.repo -o /etc/yum.repos.d/gocd.repo')
     sh("yum makecache --disablerepo='*' --enablerepo='gocd*'")
   end
 
@@ -84,21 +83,20 @@ class Redhat
   end
 
   def setup_postgres
-    sh("yum install --assumeyes postgresql-server")
-    sh("yum install --assumeyes postgresql-contrib")
-    sh(%Q{su - postgres -c bash -c 'initdb -D /var/lib/pgsql/data'})
-    sh(%Q{su - postgres -c bash -c 'pg_ctl -D /var/lib/pgsql/data -l /var/lib/pgsql/data/logfile start'})
-    sh(%Q{su - postgres -c bash -c 'sed -i 's/peer/md5/g' /var/lib/pgsql/data/pg_hba.conf'})
-    sh(%Q{su - postgres -c /bin/bash -c "psql -c \\"ALTER USER postgres WITH PASSWORD 'postgres'\\";"})
-    sh(%Q{su - postgres -c bash -c 'createdb -U postgres cruise'})
-    sh(%Q{su - postgres -c bash -c 'pg_ctl -D /var/lib/pgsql/data -l /var/lib/pgsql/data/logfile restart'})
+    sh('yum install --assumeyes postgresql-server')
+    sh('yum install --assumeyes postgresql-contrib')
+    sh(%(su - postgres -c bash -c 'initdb -D /var/lib/pgsql/data'))
+    sh(%(su - postgres -c bash -c 'pg_ctl -D /var/lib/pgsql/data -l /var/lib/pgsql/data/logfile start'))
+    sh(%(su - postgres -c bash -c 'sed -i 's/peer/md5/g' /var/lib/pgsql/data/pg_hba.conf'))
+    sh(%(su - postgres -c /bin/bash -c "psql -c \\"ALTER USER postgres WITH PASSWORD 'postgres'\\";"))
+    sh(%(su - postgres -c bash -c 'createdb -U postgres cruise'))
+    sh(%(su - postgres -c bash -c 'pg_ctl -D /var/lib/pgsql/data -l /var/lib/pgsql/data/logfile restart'))
   end
-
 end
 
 {
-    'debian' => Debian,
-    'centos' => Redhat,
+  'debian' => Debian,
+  'centos' => Redhat
 }.each do |os, klass|
   namespace os do
     @postgres_setup_done = false
@@ -124,7 +122,7 @@ end
       klass.new.install('go-agent', ENV['GO_VERSION'])
     end
 
-    task :install_latest_version => [:install_server, :install_agent]
+    task install_latest_version: %i[install_server install_agent]
 
     task :install_old_version do
       klass.new.install('go-server', ENV['GO_INITIAL_VERSION'])
@@ -145,19 +143,19 @@ end
       addon = addon_for version
       sh('echo ' 'GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\"' '>> /etc/default/go-server')
 
-      sh(%Q{su - go bash -c 'mkdir -p /var/lib/go-server/addons ; rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
-      sh(%Q{su - go bash -c 'echo "db.host=localhost"  >> /etc/go/postgresqldb.properties'})
-      sh(%Q{su - go bash -c 'echo "db.port=5432"  >> /etc/go/postgresqldb.properties'})
-      sh(%Q{su - go bash -c 'echo "db.name=cruise"  >> /etc/go/postgresqldb.properties'})
-      sh(%Q{su - go bash -c 'echo "db.user=postgres"  >> /etc/go/postgresqldb.properties'})
-      sh(%Q{su - go bash -c 'echo "db.password=postgres"  >> /etc/go/postgresqldb.properties'})
+      sh(%(su - go bash -c 'mkdir -p /var/lib/go-server/addons ; rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'))
+      sh(%(su - go bash -c 'echo "db.host=localhost"  >> /etc/go/postgresqldb.properties'))
+      sh(%(su - go bash -c 'echo "db.port=5432"  >> /etc/go/postgresqldb.properties'))
+      sh(%(su - go bash -c 'echo "db.name=cruise"  >> /etc/go/postgresqldb.properties'))
+      sh(%(su - go bash -c 'echo "db.user=postgres"  >> /etc/go/postgresqldb.properties'))
+      sh(%(su - go bash -c 'echo "db.password=postgres"  >> /etc/go/postgresqldb.properties'))
     end
 
     task :change_postgres_addons_jar do
       if ENV['USE_POSTGRES']
         addon = addon_for ENV['GO_VERSION']
-        sh(%Q{su - go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'})
-        sh("/etc/init.d/go-server restart")
+        sh(%(su - go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'))
+        sh('/etc/init.d/go-server restart')
       end
     end
 
@@ -205,7 +203,7 @@ end
       if ENV['USE_POSTGRES']
         Timeout.timeout(120) do
           loop do
-            if File.open('/var/log/go-server/go-server.log').lines.any? {|line| line.include?('Using connection configuration jdbc:postgresql://localhost:5432/cruise [User: postgres] [Password Encrypted: false]')}
+            if File.open('/var/log/go-server/go-server.log').lines.any? { |line| line.include?('Using connection configuration jdbc:postgresql://localhost:5432/cruise [User: postgres] [Password Encrypted: false]') }
               p 'server up with postgres'
               break
             end
@@ -218,7 +216,7 @@ end
         loop do
           agents = JSON.parse(open('http://localhost:8153/go/api/agents', 'Accept' => agent_api_version).read)['_embedded']['agents']
 
-          if agents.any? {|a| a['agent_state'] == 'Idle'}
+          if agents.any? { |a| a['agent_state'] == 'Idle' }
             puts 'Agent is up'
             break
           end
@@ -229,7 +227,7 @@ end
     task :create_pipeline do
       url = 'http://localhost:8153/go/api/admin/pipelines'
       puts 'create a pipeline'
-      sh(%Q{curl --silent --fail --location --dump-header - -X POST -H "Accept: #{pipeline_api_version}" -H "Content-Type: application/json" --data "@/vagrant/provision/filesystem/pipeline.json" #{url}})
+      sh(%(curl --silent --fail --location --dump-header - -X POST -H "Accept: #{pipeline_api_version}" -H "Content-Type: application/json" --data "@/vagrant/provision/filesystem/pipeline.json" #{url}))
     end
 
     task :create_pipeline_by_config do
@@ -240,13 +238,13 @@ end
     task :unpause_pipeline do
       url = "http://localhost:8153/go/api/pipelines/#{PIPELINE_NAME}/unpause"
       puts 'unpause the pipeline'
-      sh(%Q{curl --silent --fail --location --dump-header - -X POST -H "Accept: #{pipeline_pause_api_version}" -H "Confirm: true" -H "X-GoCD-Confirm: true" #{url}})
+      sh(%(curl --silent --fail --location --dump-header - -X POST -H "Accept: #{pipeline_pause_api_version}" -H "Confirm: true" -H "X-GoCD-Confirm: true" #{url}))
     end
 
     def trigger_pipeline
       url = "http://localhost:8153/go/api/pipelines/#{PIPELINE_NAME}/schedule"
       puts 'trigger the pipeline'
-      sh(%Q{curl --silent --fail --location --dump-header - -X POST -H "Accept: #{pipeline_schedule_api_version}" -H "Confirm: true" -H "X-GoCD-Confirm: true" #{url}})
+      sh(%(curl --silent --fail --location --dump-header - -X POST -H "Accept: #{pipeline_schedule_api_version}" -H "Confirm: true" -H "X-GoCD-Confirm: true" #{url}))
     end
 
     task :trigger_pipeline_first do
@@ -278,7 +276,7 @@ end
       response = Net::HTTP.start(uri.host, uri.port) do |http|
         http.request(request)
       end
-      puts "Successfully created pipeline" if response.is_a?(Net::HTTPCreated)
+      puts 'Successfully created pipeline' if response.is_a?(Net::HTTPCreated)
       raise "Pipeline creation failed with error: #{response.body}" unless response.is_a?(Net::HTTPCreated)
     end
 
@@ -286,6 +284,7 @@ end
       cctray_response = nil
       Timeout.timeout(300) do
         loop do
+
           cctray_response = open("http://localhost:8153/go/cctray.xml").read
           status = cctray_response.match(/lastBuildStatus="(\w+)"/)
           puts "Pipeline build status #{status.captures}" if status
@@ -344,9 +343,7 @@ end
     end
 
     def dashboard_api_version
-      if current_gocd_version >= Gem::Version.new('15.3.0')
-        GoCDApiVersion::V1
-      end
+      GoCDApiVersion::V1 if current_gocd_version >= Gem::Version.new('15.3.0')
     end
 
     def check_pipeline_status
@@ -356,7 +353,7 @@ end
           sleep 5
           dashboard_response = JSON.parse(open('http://localhost:8153/go/api/dashboard', 'Accept' => dashboard_api_version).read)
 
-          if dashboard_response["_embedded"]["pipeline_groups"][0]["_embedded"]["pipelines"][0]["_embedded"]["instances"][0]["_embedded"]["stages"][0]["status"] == 'Passed'
+          if dashboard_response['_embedded']['pipeline_groups'][0]['_embedded']['pipelines'][0]['_embedded']['instances'][0]['_embedded']['stages'][0]['status'] == 'Passed'
             puts 'Pipeline completed with success'
             break
           end
@@ -373,12 +370,12 @@ end
 
     def addon_for(core)
       versions_map = JSON.parse(File.read('/vagrant/addons/addon_builds.json'))
-      versions_map.select {|v| v['gocd_version'] == core}.last['addons']['postgresql']
+      versions_map.select { |v| v['gocd_version'] == core }.last['addons']['postgresql']
     end
 
-    task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline, :unpause_pipeline, :check_pipeline_pass_with_label_1]
-    task :setup => [:repo, :install_old_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
-    task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
+    task fresh: %i[repo install_latest_version start_agent check_service_is_up create_pipeline unpause_pipeline check_pipeline_pass_with_label_1]
+    task setup: %i[repo install_old_version start_agent check_service_is_up create_pipeline_by_config trigger_pipeline_first check_pipeline_pass_with_label_1]
+    task upgrade: %i[setup install_server change_postgres_addons_jar check_service_is_up_again trigger_pipeline_again check_pipeline_pass_with_label_2]
 
     task :upgrade_test do
       upgrade_list = ENV['UPGRADE_VERSIONS_LIST']
@@ -388,7 +385,7 @@ end
           ENV['GO_INITIAL_VERSION'] = version
           puts "upgrade test. Version FROM: #{ENV['GO_INITIAL_VERSION']} TO: #{ENV['GO_VERSION']}"
           Rake::Task["#{os}:upgrade"].invoke
-        rescue => e
+        rescue StandardError => e
           raise "Installer testing failed. Error message #{e.message}"
         ensure
           Rake::Task["#{os}:upgrade"].reenable
@@ -408,6 +405,5 @@ end
         end
       end
     end
-
   end
 end
