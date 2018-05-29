@@ -1,5 +1,5 @@
 ##########################################################################
-# Copyright 2016 ThoughtWorks, Inc.
+# Copyright 2018 ThoughtWorks, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -172,31 +172,31 @@ end
     end
 
     def server_running?
-      sleep 5
-      ping_server.is_a?(Net::HTTPSuccess)
-    rescue StandardError => e
+      ping_response = ping_server
+      ping_response.is_a?(Net::HTTPFound) || ping_response.is_a?(Net::HTTPSuccess)
+    rescue => e
       false
     end
 
     def ping_server
-      uri = URI('http://localhost:8153/go/auth/login')
-      Net::HTTP.get_response(uri)
+      Net::HTTP.get_response(URI("http://localhost:8153/go/auth/login"))
     end
 
     def wait_to_start
+      puts 'Wait server to come up'
       Timeout.timeout(120) do
         loop do
           begin
+            puts '.'
             break if server_running?
           rescue Errno::ECONNREFUSED
-            sleep 5
           end
+          sleep 5
         end
       end
     end
 
     def service_status
-      puts 'wait for server to come up'
       wait_to_start
 
       # check if server startup with postgres only
@@ -272,7 +272,7 @@ end
       url = "http://localhost:8153/go/tab/admin/pipelines/#{PIPELINE_NAME}.json"
       uri = URI(url)
       request = Net::HTTP::Post.new(uri.path)
-      request.set_form_data('scm' => 'git', 'url' => 'https://github.com/agoyal-git/testrepo.git', 'builder' => 'exec', 'command' => 'ls')
+      request.set_form_data({"scm" => "git", "url" => "https://github.com/gocd/installer-testing", "builder" => "exec", "command" => "ls"})
       response = Net::HTTP.start(uri.host, uri.port) do |http|
         http.request(request)
       end
@@ -282,13 +282,18 @@ end
 
     def check_pipeline_in_cctray(label)
       cctray_response = nil
-      Timeout.timeout(180) do
+      Timeout.timeout(300) do
         loop do
-          cctray_response = open('http://localhost:8153/go/cctray.xml').read
-          if cctray_response.include? %(<Project name="#{PIPELINE_NAME} :: defaultStage" activity="Sleeping" lastBuildStatus="Success" lastBuildLabel="#{label}")
-            puts 'Pipeline completed successfully'
+
+          cctray_response = open("http://localhost:8153/go/cctray.xml").read
+          status = cctray_response.match(/lastBuildStatus="(\w+)"/)
+          puts "Pipeline build status #{status.captures}" if status
+
+          if cctray_response.include? %Q(<Project name="#{PIPELINE_NAME} :: defaultStage" activity="Sleeping" lastBuildStatus="Success" lastBuildLabel="#{label}")
+            puts "Pipeline completed successfully"
             break
           end
+          sleep 2
         end
       end
     rescue Timeout::Error
