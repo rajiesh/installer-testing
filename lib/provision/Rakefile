@@ -105,6 +105,8 @@ end
       klass.new.repo
     end
 
+    task install_latest_version: %i[install_server install_agent]
+
     task :install_server do
       sh('/etc/init.d/go-server stop 2>/dev/null || true')
       klass.new.install('go-server', ENV['GO_VERSION'])
@@ -121,8 +123,6 @@ end
     task :install_agent do
       klass.new.install('go-agent', ENV['GO_VERSION'])
     end
-
-    task install_latest_version: %i[install_server install_agent]
 
     task :install_old_version do
       klass.new.install('go-server', ENV['GO_INITIAL_VERSION'])
@@ -141,7 +141,7 @@ end
       p 'Setting up postgres addon'
       sh('/etc/init.d/go-server stop 2>/dev/null || true')
       addon = addon_for version
-      sh('echo ' 'GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\"' '>> /etc/default/go-server')
+      sh('echo GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\" >> /etc/default/go-server')
 
       sh(%(su - go bash -c 'mkdir -p /var/lib/go-server/addons ; rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'))
       sh(%(su - go bash -c 'echo "db.host=localhost"  >> /etc/go/postgresqldb.properties'))
