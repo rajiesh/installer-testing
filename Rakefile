@@ -254,7 +254,6 @@ task :upgrade_tests do |t|
       rescue => e
         raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
       ensure
-        sh "docker stop #{box.container_name}"
         sh "docker rm -f #{box.container_name}"
       end
     end
@@ -276,7 +275,6 @@ task :upgrade_tests_w_postgres do |t|
       rescue => e
         raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
       ensure
-        sh "docker stop #{box.container_name}"
         sh "docker rm -f #{box.container_name}"
       end
     end
