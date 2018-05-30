@@ -105,7 +105,7 @@ end
       klass.new.repo
     end
 
-    task install_latest_version: %i[install_server install_agent]
+    task :install_latest_version => [:install_server, :install_agent]
 
     task :install_server do
       sh('/etc/init.d/go-server stop 2>/dev/null || true')
@@ -373,9 +373,9 @@ end
       versions_map.select { |v| v['gocd_version'] == core }.last['addons']['postgresql']
     end
 
-    task fresh: %i[repo install_latest_version start_agent check_service_is_up create_pipeline unpause_pipeline check_pipeline_pass_with_label_1]
-    task setup: %i[repo install_old_version start_agent check_service_is_up create_pipeline_by_config trigger_pipeline_first check_pipeline_pass_with_label_1]
-    task upgrade: %i[setup install_server change_postgres_addons_jar check_service_is_up_again trigger_pipeline_again check_pipeline_pass_with_label_2]
+    task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline, :unpause_pipeline, :check_pipeline_pass_with_label_1]
+    task :setup => [:repo, :install_old_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
+    task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
 
     task :upgrade_test do
       upgrade_list = ENV['UPGRADE_VERSIONS_LIST']
