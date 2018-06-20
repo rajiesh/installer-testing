@@ -1,0 +1,10 @@
+{
+  "id": "file_based",
+  "plugin_id": "cd.go.authentication.passwordfile",
+  "properties": [
+    {
+      "key": "PasswordFilePath",
+      "value": "/vagrant/filesystem/passwd"
+    }
+  ]
+}

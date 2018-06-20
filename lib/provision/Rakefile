@@ -23,9 +23,9 @@ require 'json'
 require 'net/http'
 require 'rubygems'
 require 'rubygems/version'
-require 'lib/helpers.rb'
-require 'lib/server-configuration.rb'
-
+require 'fileutils'
+require_relative 'lib/helpers.rb'
+require_relative 'lib/server-configuration.rb'
 
 class Debian
   include Rake::DSL
@@ -94,55 +94,50 @@ end
     @postgres_setup_done = false
     @helper = Helper::SetUp.new
 
-    def repo
-      klass.new.repo
-    end
-
-    def install_server version
-      
-      klass.new.install('go-server', version)
+    task :install_server do
+      klass.new.install('go-server', ENV['GO_VERSION'])
       if ENV['USE_POSTGRES']
         unless @postgres_setup_done
           klass.new.setup_postgres
           @postgres_setup_done = true
         end
-        setup_postgres_addon version
+        @helper.setup_postgres_addon ENV['GO_VERSION']
       end
       sh('/etc/init.d/go-server start')
     end
 
-    def install_agent version
-      klass.new.install('go-agent', version)
+    task :install_agent do
+      klass.new.install('go-agent', ENV['GO_VERSION'])
     end
 
-    task :fresh_install, [:version] do |_t, args|
-      repo
-      install_server args.version
-      install_agent args.version
-      mkdir_p "/var/lib/go-server/plugins/external/" # Create this folder for plugins to be setup for respective versions
-      configuration = ServerConfiguration.new(args.version)
+    task :fresh do
+      klass.new.repo
+      Rake::Task["#{os}:install_server"].invoke
+      Rake::Task["#{os}:install_agent"].invoke
+      mkdir_p '/var/lib/go-server/plugins/external/'
+      @helper.service_status
+      configuration = Configuration::ServerConfiguration.new(ENV['GO_VERSION'])
       configuration.setup
       configuration.validate
     end
 
     task :upgrade_test do
-      repo
-      upgrade_list = ENV['UPGRADE_VERSIONS_LIST']
-      p "this is the upgrade list #{upgrade_list}"
-      upgrade_list.split(/\s*,\s*/).each do |version|
-        begin
-          install_server version
-          install_agent version
-          @helper.setup_postgres_addon version
-          mkdir_p "/var/lib/go-server/plugins/external/" # Create this folder for plugins to be setup for respective versions
-          configuration = ServerConfiguration.new(version)
-          configuration.setup
-          sh('/etc/init.d/go-server stop 2>/dev/null || true')
-          install_server ENV['GO_VERSION']
-          install_agent ENV['GO_VERSION']
-          configuration.validate
-        end
-      end
-    end 
+      klass.new.repo
+      ENV['GO_VERSION'] = ENV['UPGRADE_FROM_VERSION']
+      Rake::Task["#{os}:install_server"].invoke
+      Rake::Task["#{os}:install_agent"].invoke
+      mkdir_p '/var/lib/go-server/plugins/external/'
+      @helper.service_status
+      Configuration::ServerConfiguration.new(ENV['GO_VERSION']).setup
+      sh('/etc/init.d/go-server stop 2>/dev/null || true')
+      ENV['GO_VERSION'] = ENV['UPGRADE_TO_VERSION']
+      @helper.change_postgres_addons_jar ENV['GO_VERSION']
+      Rake::Task["#{os}:install_server"].reenable
+      Rake::Task["#{os}:install_agent"].reenable
+      Rake::Task["#{os}:install_server"].invoke
+      Rake::Task["#{os}:install_agent"].invoke
+      @helper.service_status
+      Configuration::ServerConfiguration.new(ENV['GO_VERSION']).validate
+    end
   end
 end

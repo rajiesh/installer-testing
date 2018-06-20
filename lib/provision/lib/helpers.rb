@@ -14,10 +14,21 @@
 # limitations under the License.
 ##########################################################################
 
+require 'open-uri'
+require 'timeout'
 require 'json'
+require 'net/http'
+require 'rubygems'
+require 'rubygems/version'
+include FileUtils
 
-Module Helper do
+module Helper
   class SetUp
+
+    def initialize
+      @api_version = Configuration::GoCDApiVersion.new
+    end
+
     def server_version
       versions = JSON.parse(open('http://localhost:8153/go/api/version', 'Accept' => V1).read)
       "#{versions['version']}-#{versions['build_number']}"
@@ -75,7 +86,7 @@ Module Helper do
       puts 'wait for agent to come up'
       Timeout.timeout(180) do
         loop do
-          agents = JSON.parse(open('http://localhost:8153/go/api/agents', 'Accept' => agent_api_version).read)['_embedded']['agents']
+          agents = JSON.parse(open('http://localhost:8153/go/api/agents', 'Accept' => @api_version.agents).read)['_embedded']['agents']
 
           if agents.any? { |a| a['agent_state'] == 'Idle' }
             puts 'Agent is up'
