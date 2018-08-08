@@ -148,8 +148,8 @@ class CentosDistro < Distro
   def install_build_tools
     [
         "yum install -y centos-release-scl initscripts",
-        "yum install -y unzip git rh-ruby22-rubygem-rake",
-        "/bin/bash -lc 'echo source /opt/rh/rh-ruby22/enable > /etc/profile.d/ruby-22.sh'"
+        "yum install -y unzip git rh-ruby23-rubygem-rake",
+        "/bin/bash -lc 'echo source /opt/rh/rh-ruby23/enable > /etc/profile.d/ruby-23.sh'"
     ]
   end
 end
