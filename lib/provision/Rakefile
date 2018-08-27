@@ -367,7 +367,7 @@ end
       versions_map.select { |v| v['gocd_version'] == core }.last['addons']['postgresql']
     end
 
-    task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline, :check_pipeline_pass_with_label_1]
+    task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :check_pipeline_pass_with_label_1]
     task :setup => [:repo, :install_old_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
     task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
 
