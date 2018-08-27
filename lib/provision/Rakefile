@@ -105,7 +105,7 @@ end
       klass.new.repo
     end
 
-    task :install_latest_version => [:install_server, :install_agent]
+    task install_latest_version: %i[install_server install_agent]
 
     task :install_server do
       sh('/etc/init.d/go-server stop 2>/dev/null || true')
@@ -174,12 +174,12 @@ end
     def server_running?
       ping_response = ping_server
       ping_response.is_a?(Net::HTTPFound) || ping_response.is_a?(Net::HTTPSuccess)
-    rescue => e
+    rescue StandardError => e
       false
     end
 
     def ping_server
-      Net::HTTP.get_response(URI("http://localhost:8153/go/auth/login"))
+      Net::HTTP.get_response(URI('http://localhost:8153/go/auth/login'))
     end
 
     def wait_to_start
@@ -262,29 +262,16 @@ end
       check_pipeline_in_cctray 2
     end
 
-    def create_pipeline
-      url = "http://localhost:8153/go/tab/admin/pipelines/#{PIPELINE_NAME}.json"
-      uri = URI(url)
-      request = Net::HTTP::Post.new(uri.path)
-      request.set_form_data({"scm" => "git", "url" => "https://github.com/gocd/installer-testing", "builder" => "exec", "command" => "ls"})
-      response = Net::HTTP.start(uri.host, uri.port) do |http|
-        http.request(request)
-      end
-      puts 'Successfully created pipeline' if response.is_a?(Net::HTTPCreated)
-      raise "Pipeline creation failed with error: #{response.body}" unless response.is_a?(Net::HTTPCreated)
-    end
-
     def check_pipeline_in_cctray(label)
       cctray_response = nil
       Timeout.timeout(300) do
         loop do
-
-          cctray_response = open("http://localhost:8153/go/cctray.xml").read
+          cctray_response = open('http://localhost:8153/go/cctray.xml').read
           status = cctray_response.match(/lastBuildStatus="(\w+)"/)
           puts "Pipeline build status #{status.captures}" if status
 
-          if cctray_response.include? %Q(<Project name="#{PIPELINE_NAME} :: defaultStage" activity="Sleeping" lastBuildStatus="Success" lastBuildLabel="#{label}")
-            puts "Pipeline completed successfully"
+          if cctray_response.include? %(<Project name="#{PIPELINE_NAME} :: defaultStage" activity="Sleeping" lastBuildStatus="Success" lastBuildLabel="#{label}")
+            puts 'Pipeline completed successfully'
             break
           end
           sleep 2
@@ -367,9 +354,9 @@ end
       versions_map.select { |v| v['gocd_version'] == core }.last['addons']['postgresql']
     end
 
-    task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :check_pipeline_pass_with_label_1]
-    task :setup => [:repo, :install_old_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
-    task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
+    task fresh: %i[repo install_latest_version start_agent check_service_is_up create_pipeline_by_config check_pipeline_pass_with_label_1]
+    task setup: %i[repo install_old_version start_agent check_service_is_up create_pipeline_by_config trigger_pipeline_first check_pipeline_pass_with_label_1]
+    task upgrade: %i[setup install_server change_postgres_addons_jar check_service_is_up_again trigger_pipeline_again check_pipeline_pass_with_label_2]
 
     task :upgrade_test do
       upgrade_list = ENV['UPGRADE_VERSIONS_LIST']
