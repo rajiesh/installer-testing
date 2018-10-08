@@ -117,7 +117,8 @@ end
         end
         setup_postgres_addon ENV['GO_VERSION']
       end
-      sh('/etc/init.d/go-server start')
+      chmod_R 0755, '/vagrant/provision/filesystem/with-java.sh'
+      sh("export JAVA_VERSION='11' && ./vagrant/provision/filesystem/with-java.sh /etc/init.d/go-server start")
     end
 
     task :install_agent do
@@ -133,7 +134,8 @@ end
         end
         setup_postgres_addon ENV['GO_INITIAL_VERSION']
       end
-      sh('/etc/init.d/go-server start')
+      chmod_R 0755, '/vagrant/provision/filesystem/with-java.sh'
+      sh("export JAVA_VERSION='1.8' && ./vagrant/provision/filesystem/with-java.sh /etc/init.d/go-server start")
       klass.new.install('go-agent', ENV['GO_INITIAL_VERSION'])
     end
 
