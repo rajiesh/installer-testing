@@ -296,16 +296,14 @@ end
     end
 
     def pipeline_api_version
+      if current_gocd_version >= Gem::Version.new('18.11.0')
+        GoCDApiVersion::V6
       if current_gocd_version >= Gem::Version.new('17.12.0')
         GoCDApiVersion::V5
       elsif current_gocd_version >= Gem::Version.new('17.4.0')
         GoCDApiVersion::V4
-      elsif current_gocd_version >= Gem::Version.new('16.10.0')
-        GoCDApiVersion::V3
-      elsif current_gocd_version >= Gem::Version.new('16.7.0')
-        GoCDApiVersion::V2
       else
-        GoCDApiVersion::V1
+        GoCDApiVersion::V3
       end
     end
 
