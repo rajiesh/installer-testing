@@ -1,4 +1,8 @@
 format_version: 3
+environments:
+  gocd:
+    pipelines:
+      - installer-tests
 pipelines:
   installer-tests:
     group: go-cd
@@ -34,8 +38,7 @@ pipelines:
           fresh-install:
             timeout: 0
             run_instances: '6'
-            resources:
-            - installer-tests-centos-7
+            elastic_profile_id: ecs-dind-gocd-agent
             tasks:
             - exec:
                 arguments:
