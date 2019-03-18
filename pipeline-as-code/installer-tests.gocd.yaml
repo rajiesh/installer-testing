@@ -1,0 +1,56 @@
+format_version: 3
+pipelines:
+  installer-tests:
+    group: go-cd
+    label_template: ${COUNT}
+    lock_behavior: none
+    tracking_tool:
+      link: https://github.com/gocd/gocd/issues/${ID}
+      regex: '##(\d+)'
+    materials:
+      git:
+        git: https://git.gocd.io/git/gocd/installer-testing
+        blacklist:
+        - '*.md'
+        shallow_clone: true
+        auto_update: true
+        branch: master
+      installers:
+        pipeline: installers
+        stage: dist
+        name: installers
+      UploadInstallers:
+        pipeline: code-sign
+        stage: metadata
+        name: code-sign
+    stages:
+    - install-tests:
+        fetch_materials: true
+        keep_artifacts: false
+        clean_workspace: false
+        approval:
+          type: success
+        jobs:
+          fresh-install:
+            timeout: 0
+            run_instances: '6'
+            resources:
+            - installer-tests-centos-7
+            tasks:
+            - exec:
+                arguments:
+                - test_installers
+                command: rake
+                run_if: passed
+          upgrade:
+            timeout: 0
+            run_instances: '5'
+            environment_variables:
+              UPGRADE_VERSIONS_LIST: 18.2.0-6228, 18.9.0-7478, 19.1.0-8469
+            elastic_profile_id: ecs-dind-gocd-agent
+            tasks:
+            - exec:
+                arguments:
+                - upgrade_tests
+                command: rake
+                run_if: passed
