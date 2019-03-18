@@ -42,8 +42,8 @@ pipelines:
                 source: addon_builds/addon_builds.json
                 destination: '#{working_dir}'
                 pipeline: upload-addons/Upgrade-testing
-                stage: defaultStage
-                job: defaultJob
+                stage: upload-addons
+                job: upload
                 artifact_origin: gocd
                 run_if: passed
             - exec:

@@ -22,8 +22,8 @@ pipelines:
         stage: Fresh_install
         name: fresh_install
       upload:
-        pipeline: upload_addons_to_download_server
-        stage: defaultStage
+        pipeline: upload-addons
+        stage: upload-addons
         name: upload
     stages:
     - Upgrade_tests:
