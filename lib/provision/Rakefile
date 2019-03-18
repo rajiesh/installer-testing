@@ -45,7 +45,7 @@ class Debian
       f.puts('deb https://download.gocd.org/experimental /')
     end
     sh('curl --silent --fail --location https://download.gocd.org/GOCD-GPG-KEY.asc | apt-key add -')
-    sh('apt-get update')
+    sh('apt-get clean && apt-get update')
   end
 
   def install(pkg_name, pkg_version)
@@ -72,7 +72,7 @@ class Redhat
 
   def repo
     sh('curl --silent --fail --location https://download.gocd.org/gocd.repo -o /etc/yum.repos.d/gocd.repo')
-    sh("yum makecache --disablerepo='*' --enablerepo='gocd*'")
+    sh("yum clean all && yum makecache --disablerepo='*' --enablerepo='gocd*'")
   end
 
   def install(pkg_name, pkg_verion)
