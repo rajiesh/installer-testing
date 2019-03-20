@@ -38,8 +38,7 @@ pipelines:
           fresh-install:
             timeout: 0
             run_instances: '6'
-            resources:
-            - installer-tests-centos-7
+            elastic_profile_id: ecs-dind-gocd-agent
             tasks:
             - exec:
                 arguments:
@@ -51,8 +50,7 @@ pipelines:
             run_instances: '5'
             environment_variables:
               UPGRADE_VERSIONS_LIST: 18.2.0-6228, 18.9.0-7478, 19.1.0-8469
-            resources:
-            - installer-tests-centos-7
+            elastic_profile_id: ecs-dind-gocd-agent
             tasks:
             - exec:
                 arguments:
