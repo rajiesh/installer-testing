@@ -26,7 +26,7 @@ require 'securerandom'
 
 RELEASES_JSON_URL = ENV['RELEASES_JSON_URL'] || 'https://download.go.cd/experimental/releases.json'
 STABLE_RELEASES_JSON_URL = ENV['STABLE_RELEASES_JSON_URL'] || 'https://download.go.cd/releases.json'
-UPGRADE_VERSIONS_LIST = ENV['UPGRADE_VERSIONS_LIST'] || "16.9.0-4001, 16.12.0-4352, 17.1.0-4511"
+UPGRADE_VERSIONS_LIST = ENV['UPGRADE_VERSIONS_LIST'] || '16.9.0-4001, 16.12.0-4352, 17.1.0-4511'
 
 def partition(things)
   things = (things || []).sort
@@ -37,12 +37,10 @@ def partition(things)
 
   result = []
 
-  until things.empty? do
+  until things.empty?
     (1..total_workers).each do |worker_index|
       thing = things.pop
-      if worker_index == current_worker_index
-        result.push(thing)
-      end
+      result.push(thing) if worker_index == current_worker_index
     end
   end
 
@@ -76,8 +74,8 @@ class Distro
   end
 
   def run_test(test_type = 'fresh', env = {})
-    env_args = env.collect {|k, v| "'#{k}=#{v}'"}.join(' ')
-    %Q{bash -lc "rake --trace --rakefile /vagrant/provision/Rakefile #{distro}:#{test_type} #{env_args}"}
+    env_args = env.collect { |k, v| "'#{k}=#{v}'" }.join(' ')
+    %(bash -lc "rake --trace --rakefile /vagrant/provision/Rakefile #{distro}:#{test_type} #{env_args}")
   end
 end
 
@@ -92,36 +90,35 @@ class DebianDistro < Distro
 
   def prepare_commands
     [
-        "bash -lc 'rm -rf /etc/apt/apt.conf.d/docker-clean'",
-        "apt-get update",
-        "apt-get install -y apt-transport-https curl",
+      "bash -lc 'rm -rf /etc/apt/apt.conf.d/docker-clean'",
+      'apt-get update',
+      'apt-get install -y apt-transport-https curl'
     ]
   end
 
   def install_jdk
     [
-        "/bin/bash -lc 'echo deb http://http.debian.net/debian jessie-backports main > /etc/apt/sources.list.d/jessie-backports.list'",
-        "apt-get update",
-        "apt-get -t jessie-backports install -y openjdk-8-jre",
+      "/bin/bash -lc 'echo deb http://http.debian.net/debian jessie-backports main > /etc/apt/sources.list.d/jessie-backports.list'",
+      'apt-get update',
+      'apt-get -t jessie-backports install -y openjdk-8-jre'
     ]
   end
 
   def install_build_tools
     [
-        "apt-get install -y rake ruby-json unzip git curl",
+      'add-apt-repository ppa:git-core/ppa',
+      'apt-get install -y rake ruby-json unzip git curl'
     ]
   end
-
 end
 
 class UbuntuDistro < DebianDistro
-
   def install_jdk
     [
-        "apt-get install -y software-properties-common python-software-properties",
-        "add-apt-repository ppa:openjdk-r/ppa",
-        "apt-get update",
-        "apt-get install -y openjdk-8-jre"
+      'apt-get install -y software-properties-common python-software-properties',
+      'add-apt-repository ppa:openjdk-r/ppa',
+      'apt-get update',
+      'apt-get install -y openjdk-8-jre'
     ]
   end
 end
@@ -137,19 +134,20 @@ class CentosDistro < Distro
 
   def prepare_commands
     [
-        "yum makecache"
+      'yum makecache'
     ]
   end
 
   def install_jdk
-    ["yum install -y java-1.8.0-openjdk"]
+    ['yum install -y java-1.8.0-openjdk']
   end
 
   def install_build_tools
     [
-        "yum install -y centos-release-scl initscripts",
-        "yum install -y unzip git rh-ruby23-rubygem-rake",
-        "/bin/bash -lc 'echo source /opt/rh/rh-ruby23/enable > /etc/profile.d/ruby-23.sh'"
+      'yum install -y centos-release-scl initscripts',
+      'yum install -y unzip rh-git29 rh-ruby23-rubygem-rake',
+      "/bin/bash -lc 'echo source /opt/rh/rh-ruby23/enable > /etc/profile.d/ruby-23.sh'",
+      "/bin/bash -lc 'echo source /opt/rh/rh-git29/enable > /etc/profile.d/rh-git29.sh'"
     ]
   end
 end
@@ -157,18 +155,18 @@ end
 def boot_container(box)
   pwd = File.dirname(__FILE__)
 
-  sh "docker stop #{box.container_name}" do |ok, res|
+  sh "docker stop #{box.container_name}" do |_ok, _res|
     puts "box #{box.container_name} does not exist, ignoring!"
   end
 
-  sh "docker rm #{box.container_name}" do |ok, res|
+  sh "docker rm #{box.container_name}" do |_ok, _res|
     puts "box #{box.container_name} does not exist, ignoring!"
   end
 
   sh "docker pull #{box.image}"
 
   mounts = {
-      "#{pwd}/lib" => '/vagrant'
+    "#{pwd}/lib" => '/vagrant'
   }
 
   box.cache_dirs.each do |cache_dir|
@@ -177,7 +175,7 @@ def boot_container(box)
     mounts[host_dir] = cache_dir
   end
 
-  sh %Q{docker run #{mounts.collect {|k, v| "--volume #{k}:#{v}"}.join(' ')} --rm -d -it --name #{box.container_name} #{box.image} sleep 3600}
+  sh %(docker run #{mounts.collect { |k, v| "--volume #{k}:#{v}" }.join(' ')} --rm -d -it --name #{box.container_name} #{box.image} sleep 3600)
 
   box.prepare_commands.each do |each_command|
     sh "docker exec #{box.container_name} #{each_command}"
@@ -205,16 +203,15 @@ task :test_installers do |t|
   partition(boxes).each do |box|
     boot_container(box)
     begin
-      env = {GO_VERSION: full_version}
+      env = { GO_VERSION: full_version }
       sh "docker exec #{box.container_name} #{box.run_test('fresh', env)}"
-    rescue => e
+    rescue StandardError => e
       raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
     ensure
       sh "docker stop #{box.container_name}"
     end
   end
 end
-
 
 task :test_installers_w_postgres do |t|
   postgres_boxes = [
@@ -225,9 +222,9 @@ task :test_installers_w_postgres do |t|
   partition(postgres_boxes).each do |box|
     boot_container(box)
     begin
-      env = {GO_VERSION: full_version, USE_POSTGRES: true}
+      env = { GO_VERSION: full_version, USE_POSTGRES: true }
       sh "docker exec #{box.container_name} #{box.run_test('fresh', env)}"
-    rescue => e
+    rescue StandardError => e
       raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
     ensure
       sh "docker stop #{box.container_name}"
@@ -237,21 +234,21 @@ end
 
 task :upgrade_tests do |t|
   upgrade_boxes = [
-      UbuntuDistro.new('ubuntu', '12.04', t.name),
-      UbuntuDistro.new('ubuntu', '14.04', t.name),
-      UbuntuDistro.new('ubuntu', '16.04', t.name),
-      DebianDistro.new('debian', '8', t.name),
-      CentosDistro.new('centos', '6', t.name),
-      CentosDistro.new('centos', '7', t.name),
+    UbuntuDistro.new('ubuntu', '12.04', t.name),
+    UbuntuDistro.new('ubuntu', '14.04', t.name),
+    UbuntuDistro.new('ubuntu', '16.04', t.name),
+    DebianDistro.new('debian', '8', t.name),
+    CentosDistro.new('centos', '6', t.name),
+    CentosDistro.new('centos', '7', t.name)
   ]
 
   partition(upgrade_boxes).each do |box|
     UPGRADE_VERSIONS_LIST.split(/\s*,\s*/).each do |from_version|
       boot_container(box)
       begin
-        env = {GO_VERSION: full_version, UPGRADE_VERSIONS_LIST: from_version}
+        env = { GO_VERSION: full_version, UPGRADE_VERSIONS_LIST: from_version }
         sh "docker exec #{box.container_name} #{box.run_test('upgrade_test', env)}"
-      rescue => e
+      rescue StandardError => e
         raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
       ensure
         sh "docker rm -f #{box.container_name}"
@@ -270,9 +267,9 @@ task :upgrade_tests_w_postgres do |t|
     UPGRADE_VERSIONS_LIST.split(/\s*,\s*/).each do |from_version|
       boot_container(box)
       begin
-        env = {GO_VERSION: full_version, UPGRADE_VERSIONS_LIST: from_version, USE_POSTGRES: true}
+        env = { GO_VERSION: full_version, UPGRADE_VERSIONS_LIST: from_version, USE_POSTGRES: true }
         sh "docker exec #{box.container_name} #{box.run_test('upgrade_test', env)}"
-      rescue => e
+      rescue StandardError => e
         raise "Installer testing failed. Error message #{e.message} #{e.backtrace.join("\n")}"
       ensure
         sh "docker rm -f #{box.container_name}"
@@ -284,28 +281,27 @@ end
 task :verify_osx_signer do
   sh "curl -L -o go-server-#{full_version}-osx.zip --fail  https://download.gocd.org/experimental/binaries/#{full_version}/osx/go-server-#{full_version}-osx.zip"
   sh "unzip go-server-#{full_version}-osx.zip"
-  sh "codesign --verify --verbose Go\\ Server.app"
+  sh 'codesign --verify --verbose Go\\ Server.app'
 end
 
 def download_addons
   json = JSON.parse(open(STABLE_RELEASES_JSON_URL).read)
-  myhash = json.sort {|a, b| a['go_full_version'] <=> b['go_full_version']}.reverse
+  myhash = json.sort_by { |a| a['go_full_version'] }.reverse
   myhash.each_with_index do |key, index|
-    if UPGRADE_VERSIONS_LIST.include? myhash[index]['go_full_version']
-      addon = addon_for(key['go_full_version'])
-      if (!File.exists?("addons/#{addon}"))
-        sh "curl -L -o lib/addons/#{addon} --fail -H 'Accept: binary/octet-stream' --user '#{ENV['EXTENSIONS_USER']}:#{ENV['EXTENSIONS_PASSWORD']}'  #{ENV['ADDON_DOWNLOAD_URL']}/#{key['go_full_version']}/download?eula_accepted=true"
-      end
+    next unless UPGRADE_VERSIONS_LIST.include? myhash[index]['go_full_version']
+    addon = addon_for(key['go_full_version'])
+    unless File.exist?("addons/#{addon}")
+      sh "curl -L -o lib/addons/#{addon} --fail -H 'Accept: binary/octet-stream' --user '#{ENV['EXTENSIONS_USER']}:#{ENV['EXTENSIONS_PASSWORD']}'  #{ENV['ADDON_DOWNLOAD_URL']}/#{key['go_full_version']}/download?eula_accepted=true"
     end
   end
 end
 
 def full_version
   json = JSON.parse(open(RELEASES_JSON_URL).read)
-  json.select {|x| x['go_version'] == ENV['GO_VERSION']}.sort {|a, b| a['go_build_number'] <=> b['go_build_number']}.last['go_full_version']
+  json.select { |x| x['go_version'] == ENV['GO_VERSION'] }.sort_by { |a| a['go_build_number'] }.last['go_full_version']
 end
 
 def addon_for(core)
   versions_map = JSON.parse(File.read('./lib/addons/addon_builds.json'))
-  versions_map.select {|v| v['gocd_version'] == core}.last['addons']['postgresql']
+  versions_map.select { |v| v['gocd_version'] == core }.last['addons']['postgresql']
 end
