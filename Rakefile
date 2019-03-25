@@ -117,8 +117,9 @@ class UbuntuDistro < DebianDistro
     [
       'apt-get install -y software-properties-common python-software-properties',
       'add-apt-repository ppa:openjdk-r/ppa',
+      'add-apt-repository ppa:git-core/ppa',
       'apt-get update',
-      'apt-get install -y openjdk-8-jre'
+      'apt-get install -y openjdk-8-jre git'
     ]
   end
 end
