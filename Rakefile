@@ -98,7 +98,8 @@ class DebianDistro < Distro
 
   def install_jdk
     [
-      "/bin/bash -lc 'echo deb http://http.debian.net/debian jessie-backports main > /etc/apt/sources.list.d/jessie-backports.list'",
+      "/bin/bash -lc 'echo deb [check-valid-until=no] http://archive.debian.org/debian jessie-backports main > /etc/apt/sources.list.d/jessie-backports.list'",
+      %(/bin/bash -lc 'echo "Acquire::Check-Valid-Until "false";" >> /etc/apt/apt.conf'),
       'apt-get update',
       'apt-get -t jessie-backports install -y openjdk-8-jre'
     ]
@@ -106,7 +107,6 @@ class DebianDistro < Distro
 
   def install_build_tools
     [
-      'add-apt-repository ppa:git-core/ppa',
       'apt-get install -y rake ruby-json unzip git curl'
     ]
   end
