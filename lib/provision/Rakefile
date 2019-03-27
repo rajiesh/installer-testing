@@ -79,6 +79,8 @@ class Redhat
   end
 
   def install(pkg_name, pkg_verion)
+    sh %(echo "127.0.0.1  localhost" > /etc/hosts)
+    sh %(echo "#{CONTAINER_IP}  #{HOSTNAME}" >> /etc/hosts)
     sh("yum install --assumeyes --enablerepo='gocd*' #{pkg_name}-#{pkg_verion}")
   end
 
