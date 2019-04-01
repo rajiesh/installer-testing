@@ -73,12 +73,6 @@ pipelines:
                 run_if: passed
             - exec:
                 arguments:
-                - -c
-                - ls ~
-                command: /bin/bash
-                run_if: passed
-            - exec:
-                arguments:
                 - -lc
                 - rake --trace test_installers_w_postgres
                 command: /bin/bash
