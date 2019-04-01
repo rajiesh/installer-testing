@@ -36,7 +36,7 @@ pipelines:
           defaultJob:
             timeout: 0
             environment_variables:
-              HOME: /var/go
+              HOME: /home/go
               GO_VERSION: 19.3.0
             elastic_profile_id: ecs-dind-gocd-agent
             tasks:
