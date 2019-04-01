@@ -34,8 +34,7 @@ pipelines:
             environment_variables:
               HOME: /var/go
               GO_VERSION: 19.3.0
-            resources:
-            - installer-tests-centos-7
+            elastic_profile_id: ecs-dind-gocd-agent
             tasks:
             - fetch:
                 is_file: true

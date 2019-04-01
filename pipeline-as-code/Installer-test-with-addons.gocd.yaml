@@ -33,8 +33,7 @@ pipelines:
             timeout: 0
             environment_variables:
               HOME: /var/go
-            resources:
-            - installer-tests-centos-7
+            elastic_profile_id: ecs-dind-gocd-agent
             tasks:
             - fetch:
                 is_file: false
