@@ -103,7 +103,7 @@ pipelines:
             - exec:
                 arguments:
                 - -c
-                - sudo rm -rf dependencies/go-primary/* ; sudo rm -rf dependencies/go-secondary/*
+                - rm -rf dependencies/go-primary/* ; rm -rf dependencies/go-secondary/*
                 command: /bin/bash
                 working_directory: '#{bc_wrk_dir}'
                 run_if: any
