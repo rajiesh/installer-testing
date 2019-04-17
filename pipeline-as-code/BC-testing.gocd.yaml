@@ -13,7 +13,13 @@ pipelines:
         auto_update: true
         branch: master
         destination: '#{bc_wrk_dir}'
-      git:
+      docker-server:
+        git: https://git.gocd.io/git/gocd/docker-gocd-server
+        shallow_clone: false
+        auto_update: true
+        branch: master
+        destination: '#{server_wrk_dir}'
+      docker-agent:
         git: https://git.gocd.io/git/gocd/docker-gocd-agent
         shallow_clone: false
         auto_update: true
