@@ -15,7 +15,7 @@ pipelines:
       git:
         git: https://git.gocd.io/git/gocd/installer-testing
         blacklist:
-        - '*.md'
+        - '*.md,pipeline-as-code/*'
         shallow_clone: true
         auto_update: true
         branch: master

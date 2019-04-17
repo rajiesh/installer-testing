@@ -35,7 +35,8 @@ pipelines:
             timeout: 0
             environment_variables:
               GO_VERSION: 19.3.0
-            elastic_profile_id: ecs-dind-gocd-agent
+            resources:
+            - installer-tests-centos-7
             tasks:
             - fetch:
                 is_file: false
@@ -103,7 +104,7 @@ pipelines:
             - exec:
                 arguments:
                 - -c
-                - rm -rf dependencies/go-primary/* ; rm -rf dependencies/go-secondary/*
+                - sudo rm -rf dependencies/go-primary/* ; sudo m -rf dependencies/go-secondary/*
                 command: /bin/bash
                 working_directory: '#{bc_wrk_dir}'
                 run_if: any
