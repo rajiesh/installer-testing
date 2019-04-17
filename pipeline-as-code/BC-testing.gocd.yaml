@@ -7,6 +7,12 @@ pipelines:
     secure_variables:
       TOKEN: AES:463pQia9Ml+OCjEgyJS68w==:WbR7WepDnIdS4gR4KSO1bi+9ZVEc41pD/oBtZzcjo5g=
     materials:
+      bc-test:
+        git: https://git.gocd.io/git/gocd/gocd-business-continuity-test
+        shallow_clone: false
+        auto_update: true
+        branch: master
+        destination: '#{bc_wrk_dir}'
       git:
         git: https://git.gocd.io/git/gocd/docker-gocd-agent
         shallow_clone: false
@@ -103,7 +109,7 @@ pipelines:
             - exec:
                 arguments:
                 - -c
-                - sudo rm -rf dependencies/go-primary/* ; sudo m -rf dependencies/go-secondary/*
+                - sudo rm -rf dependencies/go-primary/* ; sudo rm -rf dependencies/go-secondary/*
                 command: /bin/bash
                 working_directory: '#{bc_wrk_dir}'
                 run_if: any
