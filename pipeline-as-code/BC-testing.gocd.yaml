@@ -35,8 +35,7 @@ pipelines:
             timeout: 0
             environment_variables:
               GO_VERSION: 19.3.0
-            resources:
-            - installer-tests-centos-7
+            elastic_profile_id: ecs-gocd-dev-build-dind
             tasks:
             - fetch:
                 is_file: false
