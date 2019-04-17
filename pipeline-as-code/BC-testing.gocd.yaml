@@ -47,7 +47,7 @@ pipelines:
             timeout: 0
             environment_variables:
               GO_VERSION: 19.3.0
-            elastic_profile_id: ecs-gocd-dev-build-dind
+            elastic_profile_id: ecs-gocd-dev-build-dind-docker-compose
             tasks:
             - fetch:
                 is_file: false
