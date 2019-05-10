@@ -17,10 +17,6 @@ pipelines:
         auto_update: true
         branch: master
         destination: '#{working_dir}'
-      fresh_install:
-        pipeline: Installer-testing
-        stage: Fresh_install
-        name: fresh_install
       upload:
         pipeline: upload-addons
         stage: upload-addons
