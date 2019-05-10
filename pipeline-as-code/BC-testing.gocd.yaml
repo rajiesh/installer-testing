@@ -13,26 +13,10 @@ pipelines:
         auto_update: true
         branch: master
         destination: '#{bc_wrk_dir}'
-      docker-server:
-        git: https://git.gocd.io/git/gocd/docker-gocd-server
-        shallow_clone: false
-        auto_update: true
-        branch: master
-        destination: '#{server_wrk_dir}'
-      docker-agent:
-        git: https://git.gocd.io/git/gocd/docker-gocd-agent
-        shallow_clone: false
-        auto_update: true
-        branch: master
-        destination: '#{agent_wrk_dir}'
       upload:
         pipeline: upload-addons
         stage: upload-addons
         name: upload
-      upgrade:
-        pipeline: Upgrade-testing
-        stage: Upgrade_tests
-        name: upgrade
     stages:
     - defaultStage:
         fetch_materials: true
@@ -46,7 +30,7 @@ pipelines:
           defaultJob:
             timeout: 0
             environment_variables:
-              GO_VERSION: 19.3.0
+              GO_VERSION: 19.4.0
             elastic_profile_id: ecs-gocd-dev-build-dind-docker-compose
             tasks:
             - fetch:

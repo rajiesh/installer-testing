@@ -17,10 +17,10 @@ pipelines:
         branch: master
         destination: '#{working_dir}'
         name: migration-test
-      installer-tests:
-        pipeline: Upgrade-testing
-        stage: Upgrade_tests
-        name: installer-tests
+      upload:
+        pipeline: upload-addons
+        stage: upload-addons
+        name: upload
     stages:
     - defaultStage:
         fetch_materials: true
@@ -40,7 +40,7 @@ pipelines:
                 is_file: true
                 source: addon_builds/addon_builds.json
                 destination: '#{working_dir}'
-                pipeline: upload-addons/Upgrade-testing
+                pipeline: upload-addons
                 stage: upload-addons
                 job: upload
                 artifact_origin: gocd
