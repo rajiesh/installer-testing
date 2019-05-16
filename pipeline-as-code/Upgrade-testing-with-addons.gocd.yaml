@@ -5,8 +5,8 @@ pipelines:
     label_template: ${COUNT}
     lock_behavior: none
     environment_variables:
-      UPGRADE_VERSIONS_LIST: 18.2.0-6228, 18.9.0-7478, 19.1.0-8469
-      ADDON_DOWNLOAD_URL: https://extensions.gocd.org/addons/postgres_experimental/versions
+      UPGRADE_VERSIONS_LIST: 18.6.0-6883, 19.1.0-8469, 19.3.0-8959
+      ADDON_DOWNLOAD_URL: https://extensions.gocd.org/addons/postgres/versions
     secure_variables:
       EXTENSIONS_USER: AES:cqVQG+A2MQsMNKa6gyZtZA==:s8oKl//qdXIbuZunTnW9IjffCctQTO1QkmuJxAg2ij1lFBEEpigmkGXTvG68kmmZ
       EXTENSIONS_PASSWORD: AES:YWoBl6MsbXznv4NCb36HBw==:9nfJaKrF6xLVVDopR/4OV3br5hPyx42w2nfz6Ld1kAo=

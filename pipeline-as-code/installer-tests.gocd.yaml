@@ -49,7 +49,7 @@ pipelines:
             timeout: 0
             run_instances: '5'
             environment_variables:
-              UPGRADE_VERSIONS_LIST: 18.2.0-6228, 18.9.0-7478, 19.1.0-8469
+              UPGRADE_VERSIONS_LIST: 18.6.0-6883, 19.1.0-8469, 19.3.0-8959
             elastic_profile_id: ecs-dind-gocd-agent
             tasks:
             - exec:
