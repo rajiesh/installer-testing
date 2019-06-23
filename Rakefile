@@ -119,7 +119,7 @@ class UbuntuDistro < DebianDistro
       'add-apt-repository ppa:openjdk-r/ppa',
       'add-apt-repository ppa:git-core/ppa',
       'apt-get update',
-      'apt-get install -y openjdk-8-jre git'
+      'apt-get install -y openjdk-8-jre git sysvinit-tools'
     ]
   end
 end
@@ -145,7 +145,7 @@ class CentosDistro < Distro
 
   def install_build_tools
     [
-      'yum install -y centos-release-scl initscripts',
+      'yum install -y centos-release-scl initscripts sysvinit-tools',
       'yum install -y unzip rh-git29 rh-ruby23-rubygem-rake',
       "/bin/bash -lc 'echo source /opt/rh/rh-ruby23/enable > /etc/profile.d/ruby-23.sh'",
       "/bin/bash -lc 'echo source /opt/rh/rh-git29/enable > /etc/profile.d/rh-git29.sh'"
