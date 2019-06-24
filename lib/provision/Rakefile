@@ -118,7 +118,7 @@ end
         setup_postgres_addon ENV['GO_VERSION']
       end
       chmod_R 0755, '/vagrant/provision/filesystem/with-java.sh'
-      sh("export JAVA_VERSION='11' && ./vagrant/provision/filesystem/with-java.sh /etc/init.d/go-server start")
+      sh("export JAVA_VERSION='12' && ./vagrant/provision/filesystem/with-java.sh /etc/init.d/go-server start")
     end
 
     task :install_agent do
@@ -143,7 +143,11 @@ end
       p 'Setting up postgres addon'
       sh('/etc/init.d/go-server stop 2>/dev/null || true')
       addon = addon_for version
-      sh('echo GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\" >> /etc/default/go-server')
+      if version < Gem::Version.new('19.6.0')
+        sh('echo GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\" >> /etc/default/go-server')
+      else
+        sh(%(su - go bash -c 'echo "wrapper.java.additional.101=-Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase"  >> /var/lib/go-server/wrapper-config/wrapper-properties.conf'))
+      end
 
       sh(%(su - go bash -c 'mkdir -p /var/lib/go-server/addons ; rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'))
       sh(%(su - go bash -c 'echo "db.host=localhost"  >> /etc/go/postgresqldb.properties'))
@@ -356,9 +360,10 @@ end
       versions_map.select { |v| v['gocd_version'] == core }.last['addons']['postgresql']
     end
 
-    task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :check_pipeline_pass_with_label_1]
-    task :setup => [:repo, :install_old_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
-    task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
+    task fresh: %I[repo install_latest_version start_agent check_service_is_up create_pipeline_by_config check_pipeline_pass_with_label_1]
+    task setup: %I[repo install_old_version start_agent check_service_is_up create_pipeline_by_config trigger_pipeline_first check_pipeline_pass_with_label_1]
+    task upgrade: %I[setup install_server change_postgres_addons_jar check_service_is_up_again trigger_pipeline_again check_pipeline_pass_with_label_2]
+
 
     task :upgrade_test do
       upgrade_list = ENV['UPGRADE_VERSIONS_LIST']
