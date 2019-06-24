@@ -17,7 +17,6 @@ elif [ "$JAVA_VERSION" = "11" ]; then
 elif [ "$JAVA_VERSION" = "12"  ]; then
   use_jdk "openjdk@1.12.0" "tgz+https://download.java.net/java/GA/jdk12/GPL/openjdk-12_linux-x64_bin.tar.gz"
 fi
-fi
 
 echo "JAVA HOME set to $JAVA_HOME"
 
