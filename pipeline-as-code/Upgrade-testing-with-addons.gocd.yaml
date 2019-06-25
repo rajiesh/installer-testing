@@ -34,7 +34,7 @@ pipelines:
             environment_variables:
               HOME: /home/go
               GO_VERSION: 19.6.0
-            elastic_profile_id: ecs-dind-gocd-agent
+            elastic_profile_id: installers-testing
             tasks:
             - fetch:
                 is_file: false

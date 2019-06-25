@@ -35,7 +35,7 @@ pipelines:
             timeout: 0
             environment_variables:
               HOME: /home/go
-            elastic_profile_id: ecs-dind-gocd-agent
+            elastic_profile_id: installers-testing
             tasks:
             - fetch:
                 is_file: false
