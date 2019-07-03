@@ -7,7 +7,6 @@ fi
 
 if [ "$1" == "agent" ]; then  
 
-    echo "here"
     if [ -f "/etc/init.d/go-agent" ]; then
         echo " Using /etc/init.d/go-agent to $2 agent "
         /etc/init.d/go-agent $2
@@ -21,7 +20,6 @@ if [ "$1" == "agent" ]; then
 
 elif [ "$1" == "server" ]; then  
 
-    echo "here"
     if [ -f "/etc/init.d/go-server" ]; then
         echo " Using /etc/init.d/go-server to $2 server "
         /etc/init.d/go-server $2
