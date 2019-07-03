@@ -108,7 +108,8 @@ end
     task :install_latest_version => [:install_server, :install_agent]
 
     task :install_server do
-      sh('/etc/init.d/go-server stop 2>/dev/null || true')
+      chmod_R 0755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
+      sh('./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh server stop')
       klass.new.install('go-server', ENV['GO_VERSION'])
       if ENV['USE_POSTGRES']
         unless @postgres_setup_done
@@ -118,7 +119,8 @@ end
         setup_postgres_addon ENV['GO_VERSION']
       end
       chmod_R 0755, '/vagrant/provision/filesystem/with-java.sh'
-      sh("export JAVA_VERSION='12' && ./vagrant/provision/filesystem/with-java.sh /etc/init.d/go-server start")
+      chmod_R 0755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
+      sh("export JAVA_VERSION='12' && ./vagrant/provision/filesystem/with-java.sh ./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh server start")
     end
 
     task :install_agent do
@@ -135,13 +137,15 @@ end
         setup_postgres_addon ENV['GO_INITIAL_VERSION']
       end
       chmod_R 0755, '/vagrant/provision/filesystem/with-java.sh'
-      sh("export JAVA_VERSION='1.8' && ./vagrant/provision/filesystem/with-java.sh /etc/init.d/go-server start")
+      chmod_R 0755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
+      sh("export JAVA_VERSION='1.8' && ./vagrant/provision/filesystem/with-java.sh ./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh server start")
       klass.new.install('go-agent', ENV['GO_INITIAL_VERSION'])
     end
 
     def setup_postgres_addon(version)
       p 'Setting up postgres addon'
-      sh('/etc/init.d/go-server stop 2>/dev/null || true')
+      chmod_R 0755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
+      sh('./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh server stop')
       addon = addon_for version
       if version < Gem::Version.new('19.6.0')
         sh('echo GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\" >> /etc/default/go-server')
@@ -161,12 +165,14 @@ end
       if ENV['USE_POSTGRES']
         addon = addon_for ENV['GO_VERSION']
         sh(%(su - go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'))
-        sh('/etc/init.d/go-server restart')
+        chmod_R 0755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
+        sh('./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh server restart')
       end
     end
 
     task :start_agent do
-      sh('/etc/init.d/go-agent start')
+      chmod_R 0755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
+      sh('./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh agent start')
     end
 
     task :check_service_is_up do
