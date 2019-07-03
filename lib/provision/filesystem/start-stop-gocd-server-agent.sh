@@ -5,8 +5,9 @@ if [ $# -ne 2 ]; then
     exit 1
 fi
 
-if [ $1 -eq "agent" ]; then  
+if [ "$1" == "agent" ]; then  
 
+    echo "here"
     if [ -f "/etc/init.d/go-agent" ]; then
         echo " Using /etc/init.d/go-agent to $2 agent "
         /etc/init.d/go-agent $2
@@ -18,8 +19,9 @@ if [ $1 -eq "agent" ]; then
         $2 go-agent
     fi
 
-elif [ $1 -eq "server" ]; then  
+elif [ "$1" == "server" ]; then  
 
+    echo "here"
     if [ -f "/etc/init.d/go-server" ]; then
         echo " Using /etc/init.d/go-server to $2 server "
         /etc/init.d/go-server $2
