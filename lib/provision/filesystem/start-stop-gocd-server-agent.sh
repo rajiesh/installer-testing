@@ -16,7 +16,7 @@ if [ "$1" == "agent" ]; then
     elif [ -f "/etc/init/go-agent.conf" ]; then
         echo " Using upstart to $2 agent "
         $2 go-agent
-    elif
+    else
         echo " Service file for agent not found"
         exit 1
     fi
@@ -32,7 +32,7 @@ elif [ "$1" == "server" ]; then
     elif [ -f "/etc/init/go-server.conf" ]; then
         echo " Using upstart to $2 server "
         $2 go-server
-    elif
+    else
         echo " Service file for server not found"
         exit 1
     fi
