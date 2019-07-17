@@ -150,7 +150,8 @@ end
       if Gem::Version.new(version) < Gem::Version.new('19.6.0')
         sh('echo GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\" >> /etc/default/go-server')
       else
-        sh(%(su - go bash -c 'echo "wrapper.java.additional.101=-Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase"  >> /var/lib/go-server/wrapper-config/wrapper-properties.conf'))
+        sh(%(mkdir -p /usr/share/go-server/wrapper-config/))
+        sh(%(echo "wrapper.java.additional.101=-Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase"  >> /usr/share/go-server/wrapper-config/wrapper-properties.conf))
       end
 
       sh(%(su - go bash -c 'mkdir -p /var/lib/go-server/addons ; rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'))
