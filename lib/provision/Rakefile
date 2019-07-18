@@ -147,10 +147,9 @@ end
       chmod_R 0755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
       sh('./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh server stop')
       addon = addon_for version
-      if Gem::Version.new(version) < Gem::Version.new('19.6.0')
+      if Gem::Version.new(version.split('-')[0]) < Gem::Version.new('19.6.0')
         sh('echo GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\" >> /etc/default/go-server')
       else
-        sh(%(mkdir -p /usr/share/go-server/wrapper-config/))
         sh(%(echo "wrapper.java.additional.101=-Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase"  >> /usr/share/go-server/wrapper-config/wrapper-properties.conf))
       end
 
@@ -218,7 +217,7 @@ end
       if ENV['USE_POSTGRES']
         Timeout.timeout(120) do
           loop do
-            if File.open('/var/log/go-server/go-server.log').lines.any? { |line| line.include?("Using connection configuration jdbc:postgresql://localhost:5432/cruise [User: postgres] [Password Encrypted: false]") }
+            if File.open('/var/log/go-server/go-server.log').each_line { |line| line.include?("Using connection configuration jdbc:postgresql://localhost:5432/cruise [User: postgres] [Password Encrypted: false]") }
               p 'server up with postgres'
               break
             end
