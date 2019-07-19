@@ -166,7 +166,8 @@ end
         addon = addon_for ENV['GO_VERSION']
         sh(%(su - go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'))
         chmod_R 0755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
-        sh('./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh server restart')
+        sh('./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh server stop')
+        sh('./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh server start')
       end
     end
 
