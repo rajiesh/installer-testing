@@ -161,16 +161,6 @@ end
       sh(%(su - go bash -c 'echo "db.password=postgres"  >> /etc/go/postgresqldb.properties'))
     end
 
-    task :change_postgres_addons_jar do
-      if ENV['USE_POSTGRES']
-        addon = addon_for ENV['GO_VERSION']
-        sh(%(su - go bash -c 'rm -rf /var/lib/go-server/addons/*.jar ; cp /vagrant/addons/#{addon} /var/lib/go-server/addons/'))
-        chmod_R 0755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
-        sh('./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh server stop')
-        sh('./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh server start')
-      end
-    end
-
     task :start_agent do
       chmod_R 0755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
       sh('./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh agent start')
@@ -369,7 +359,7 @@ end
 
     task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :check_pipeline_pass_with_label_1]
     task :setup => [:repo, :install_old_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
-    task :upgrade => [:setup, :install_server, :change_postgres_addons_jar, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
+    task :upgrade => [:setup, :install_server, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
 
 
     task :upgrade_test do
@@ -393,7 +383,6 @@ end
           Rake::Task["#{os}:trigger_pipeline_first"].reenable
           Rake::Task["#{os}:check_pipeline_pass_with_label_1"].reenable
           Rake::Task["#{os}:install_server"].reenable
-          Rake::Task["#{os}:change_postgres_addons_jar"].reenable
           Rake::Task["#{os}:check_service_is_up_again"].reenable
           Rake::Task["#{os}:trigger_pipeline_again"].reenable
           Rake::Task["#{os}:check_pipeline_pass_with_label_2"].reenable
