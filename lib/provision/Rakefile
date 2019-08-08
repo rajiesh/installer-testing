@@ -33,6 +33,8 @@ class GoCDApiVersion
   V4 = 'application/vnd.go.cd.v4+json'.freeze
   V5 = 'application/vnd.go.cd.v5+json'.freeze
   V6 = 'application/vnd.go.cd.v6+json'.freeze
+  V7 = 'application/vnd.go.cd.v7+json'.freeze
+  V8 = 'application/vnd.go.cd.v8+json'.freeze
 end
 
 class Debian
