@@ -110,7 +110,7 @@ end
     task :install_latest_version => [:install_server, :install_agent]
 
     task :install_server do
-      sh('pkill -f go-server')
+      sh('pkill -f go-server || true')
       klass.new.install('go-server', ENV['GO_VERSION'])
       if ENV['USE_POSTGRES']
         unless @postgres_setup_done
@@ -145,7 +145,7 @@ end
 
     def setup_postgres_addon(version)
       p 'Setting up postgres addon'
-      sh('pkill -f go-server')
+      sh('pkill -f go-server || true')
       addon = addon_for version
       if Gem::Version.new(version.split('-')[0]) < Gem::Version.new('19.6.0')
         sh('echo GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\" >> /etc/default/go-server')
