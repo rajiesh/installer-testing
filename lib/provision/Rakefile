@@ -176,8 +176,8 @@ end
 
     def server_running?
       begin
-        sh(%(curl http://127.0.0.1:8153/go/about -o about.txt))
-        return true if File.readlines('about.txt').any? { |l| l[ENV['GO_VERSION'].split('-').first] }
+        sh(%(curl -I http://127.0.0.1:8153/go/about -o about.txt))
+        return true if File.readlines('about.txt').any? { |l| l['200 OK'] }
       rescue StandardError => e
         return false
       end
