@@ -146,8 +146,8 @@ class CentosDistro < Distro
   def install_build_tools
     [
       'yum install -y centos-release-scl initscripts sysvinit-tools',
-      'yum install -y unzip rh-git29 rh-ruby23-rubygem-rake',
-      "/bin/bash -lc 'echo source /opt/rh/rh-ruby23/enable > /etc/profile.d/ruby-23.sh'",
+      'yum install -y unzip rh-git29 rh-ruby24-rubygem-rake',
+      "/bin/bash -lc 'echo source /opt/rh/rh-ruby24/enable > /etc/profile.d/ruby-24.sh'",
       "/bin/bash -lc 'echo source /opt/rh/rh-git29/enable > /etc/profile.d/rh-git29.sh'"
     ]
   end
@@ -193,7 +193,6 @@ end
 
 task :test_installers do |t|
   boxes = [
-      UbuntuDistro.new('ubuntu', '12.04', t.name),
       UbuntuDistro.new('ubuntu', '14.04', t.name),
       UbuntuDistro.new('ubuntu', '16.04', t.name),
       DebianDistro.new('debian', '8', t.name),
@@ -235,7 +234,6 @@ end
 
 task :upgrade_tests do |t|
   upgrade_boxes = [
-    UbuntuDistro.new('ubuntu', '12.04', t.name),
     UbuntuDistro.new('ubuntu', '14.04', t.name),
     UbuntuDistro.new('ubuntu', '16.04', t.name),
     DebianDistro.new('debian', '8', t.name),
