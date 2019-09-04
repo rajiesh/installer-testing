@@ -37,7 +37,7 @@ pipelines:
         jobs:
           fresh-install:
             timeout: 0
-            run_instances: '6'
+            run_instances: '5'
             elastic_profile_id: installers-testing
             tasks:
             - exec:
