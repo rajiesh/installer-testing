@@ -110,7 +110,7 @@ end
     task :install_latest_version => [:install_server, :install_agent]
 
     task :install_server do
-      sh('pkill -f go-server')  if server_running?
+      sh('pkill -f go-server') if server_running?
       klass.new.install('go-server', ENV['GO_VERSION'])
       if ENV['USE_POSTGRES']
         unless @postgres_setup_done
@@ -175,14 +175,13 @@ end
     end
 
     def server_running?
-      ping_response = ping_server
-      ping_response.is_a?(Net::HTTPFound) || ping_response.is_a?(Net::HTTPSuccess)
-    rescue StandardError => e
+      begin
+        sh(%(curl http://127.0.0.1:8153/go/about -o about.txt))
+        return true if File.readlines('about.txt').any? { |l| l[ENV['GO_VERSION'].split('-').first] }
+      rescue StandardError => e
+        return false
+      end
       false
-    end
-
-    def ping_server
-      Net::HTTP.get_response(URI('http://localhost:8153/go/about'))
     end
 
     def wait_to_start
@@ -201,12 +200,13 @@ end
 
     def service_status
       wait_to_start
+      pg_connection = 'Using connection configuration jdbc:postgresql://localhost:5432/cruise [User: postgres] [Password Encrypted: false]'
 
       # check if server startup with postgres only
       if ENV['USE_POSTGRES']
         Timeout.timeout(120) do
           loop do
-            if File.open('/var/log/go-server/go-server.log').each_line { |line| line.include?('Using connection configuration jdbc:postgresql://localhost:5432/cruise [User: postgres] [Password Encrypted: false]') }
+            if File.readlines('/var/log/go-server/go-server.log').any? { |l| l[pg_connection] }
               p 'server up with postgres'
               break
             end
@@ -362,7 +362,6 @@ end
     task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :check_pipeline_pass_with_label_1]
     task :setup => [:repo, :install_old_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
     task :upgrade => [:setup, :install_server, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
-
 
     task :upgrade_test do
       upgrade_list = ENV['UPGRADE_VERSIONS_LIST']
