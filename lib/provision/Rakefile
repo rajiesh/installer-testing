@@ -110,7 +110,7 @@ end
     task :install_latest_version => [:install_server, :install_agent]
 
     task :install_server do
-      sh('pkill -f go-server || true')
+      sh('pkill -f go-server')  if server_running?
       klass.new.install('go-server', ENV['GO_VERSION'])
       if ENV['USE_POSTGRES']
         unless @postgres_setup_done
@@ -145,7 +145,7 @@ end
 
     def setup_postgres_addon(version)
       p 'Setting up postgres addon'
-      sh('pkill -f go-server || true')
+      sh('pkill -f go-server') if server_running?
       addon = addon_for version
       if Gem::Version.new(version.split('-')[0]) < Gem::Version.new('19.6.0')
         sh('echo GO_SERVER_SYSTEM_PROPERTIES=\"\$GO_SERVER_SYSTEM_PROPERTIES -Dgo.database.provider=com.thoughtworks.go.postgresql.PostgresqlDatabase\" >> /etc/default/go-server')
@@ -175,16 +175,14 @@ end
     end
 
     def server_running?
-      # ping_response = ping_server
-      # ping_response.is_a?(Net::HTTPFound) || ping_response.is_a?(Net::HTTPSuccess)
-      sleep 100
-      true
+      ping_response = ping_server
+      ping_response.is_a?(Net::HTTPFound) || ping_response.is_a?(Net::HTTPSuccess)
     rescue StandardError => e
       false
     end
 
     def ping_server
-      Net::HTTP.get_response(URI('http://localhost:8153/go/auth/login'))
+      Net::HTTP.get_response(URI('http://localhost:8153/go/about'))
     end
 
     def wait_to_start
@@ -194,7 +192,7 @@ end
           begin
             puts '.'
             break if server_running?
-          rescue Errno::ECONNREFUSED
+          rescue StandardError => e
           end
           sleep 5
         end
