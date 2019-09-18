@@ -148,7 +148,7 @@ class CentosDistro < Distro
 
     [
       'yum install -y centos-release-scl initscripts sysvinit-tools',
-      'yum install -y unzip rh-git29 rh-ruby24-rubygem-rake',
+      "yum install -y unzip #{git} rh-ruby24-rubygem-rake",
       "/bin/bash -lc 'echo source /opt/rh/rh-ruby24/enable > /etc/profile.d/ruby-24.sh'",
       "/bin/bash -lc 'echo source /opt/rh/#{git}/enable > /etc/profile.d/#{git}.sh'"
     ]
