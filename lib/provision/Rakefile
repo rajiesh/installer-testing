@@ -27,6 +27,7 @@ require 'rubygems/version'
 PIPELINE_NAME = 'testpipeline'.freeze
 
 class GoCDApiVersion
+  V = 'application/vnd.go.cd+json'.freeze
   V1 = 'application/vnd.go.cd.v1+json'.freeze
   V2 = 'application/vnd.go.cd.v2+json'.freeze
   V3 = 'application/vnd.go.cd.v3+json'.freeze
@@ -294,47 +295,47 @@ end
     end
 
     def agent_api_version
-      if current_gocd_version >= Gem::Version.new('16.10.0')
-        GoCDApiVersion::V4
+      if current_gocd_version >= Gem::Version.new('19.8.0')
+        GoCDApiVersion::V
       else
-        GoCDApiVersion::V3
+        GoCDApiVersion::V4
       end
     end
 
     def pipeline_api_version
-      if current_gocd_version >= Gem::Version.new('19.6.0')
+      if urrent_gocd_version >= Gem::Version.new('19.8.0')
+        GoCDApiVersion::V
+      elsif current_gocd_version >= Gem::Version.new('19.6.0')
         GoCDApiVersion::V8
       elsif current_gocd_version >= Gem::Version.new('19.4.0')
         GoCDApiVersion::V7
       elsif current_gocd_version >= Gem::Version.new('18.11.0')
         GoCDApiVersion::V6
-      elsif current_gocd_version >= Gem::Version.new('17.12.0')
-        GoCDApiVersion::V5
-      elsif current_gocd_version >= Gem::Version.new('17.4.0')
-        GoCDApiVersion::V4
-      else
-        GoCDApiVersion::V3
       end
     end
 
     def pipeline_pause_api_version
-      if current_gocd_version >= Gem::Version.new('18.2.0')
-        GoCDApiVersion::V1
+      if current_gocd_version >= Gem::Version.new('19.8.0')
+        GoCDApiVersion::V
       else
-        'text/plain'
+        GoCDApiVersion::V1
       end
     end
 
     def pipeline_schedule_api_version
-      if current_gocd_version >= Gem::Version.new('18.2.0')
-        GoCDApiVersion::V1
+      if current_gocd_version >= Gem::Version.new('19.8.0')
+        GoCDApiVersion::V
       else
-        'text/plain'
+        GoCDApiVersion::V1
       end
     end
 
     def dashboard_api_version
-      GoCDApiVersion::V1 if current_gocd_version >= Gem::Version.new('15.3.0')
+      if current_gocd_version >= Gem::Version.new('19.8.0')
+        GoCDApiVersion::V
+      else
+        GoCDApiVersion::V2
+      end
     end
 
     def check_pipeline_status

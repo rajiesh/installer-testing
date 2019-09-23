@@ -8,6 +8,8 @@ pipelines:
     group: go-cd
     label_template: ${COUNT}
     lock_behavior: none
+    environment_variables:
+      GO_VERSION: 19.9.0
     tracking_tool:
       link: https://github.com/gocd/gocd/issues/${ID}
       regex: '##(\d+)'
