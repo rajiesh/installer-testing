@@ -307,7 +307,7 @@ end
     end
 
     def pipeline_api_version
-      if urrent_gocd_version >= Gem::Version.new('19.8.0')
+      if current_gocd_version >= Gem::Version.new('19.8.0')
         GoCDApiVersion::V
       elsif current_gocd_version >= Gem::Version.new('19.6.0')
         GoCDApiVersion::V8
