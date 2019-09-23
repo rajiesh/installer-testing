@@ -373,7 +373,7 @@ end
 
     task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :check_pipeline_pass_with_label_1]
     task :setup => [:repo, :install_old_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
-    task :upgrade => [:setup, :install_server, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
+    task :upgrade => [:setup, :install_latest_version, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
 
     task :upgrade_test do
       upgrade_list = ENV['UPGRADE_VERSIONS_LIST']
