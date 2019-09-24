@@ -127,10 +127,15 @@ end
     end
 
     task :install_agent do
-      sh('pkill -f go-agent') if agent_any?(agent_api_version)
-      klass.new.install('go-agent', ENV['GO_VERSION'])
-      chmod_R 0o755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
-      sh("export JAVA_VERSION='12' && ./vagrant/provision/filesystem/with-java.sh ./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh agent start")
+      if agent_any?(agent_api_version)
+        sh('pkill -f go-agent')
+        upgrade_java
+        sh("./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh agent start")
+      else
+        klass.new.install('go-agent', ENV['GO_VERSION'])
+        chmod_R 0o755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
+        sh("export JAVA_VERSION='12' && ./vagrant/provision/filesystem/with-java.sh ./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh agent start")
+      end
       agent_status
     end
 
@@ -150,6 +155,12 @@ end
       klass.new.install('go-agent', ENV['GO_INITIAL_VERSION'])
       sh("export JAVA_VERSION='1.8' && ./vagrant/provision/filesystem/with-java.sh ./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh agent start")
       agent_status
+    end
+
+    def upgrade_java
+      sh("curl https://download.java.net/openjdk/jdk11/ri/openjdk-11+28_linux-x64_bin.tar.gz -o /home/openjdk-11+28_linux-x64_bin.tar.gz")
+      sh ("tar -xvf /home/openjdk-11+28_linux-x64_bin.tar.gz -C /home/")
+      sh ("ln -s -f /home/jdk-11/bin/java /usr/bin/java")
     end
 
     def setup_postgres_addon(version)
