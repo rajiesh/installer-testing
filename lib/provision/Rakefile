@@ -123,10 +123,15 @@ end
       chmod_R 0o755, '/vagrant/provision/filesystem/with-java.sh'
       chmod_R 0o755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
       sh("export JAVA_VERSION='12' && ./vagrant/provision/filesystem/with-java.sh ./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh server start")
+      server_status
     end
 
     task :install_agent do
+      sh('pkill -f go-agent') if agent_any?(agent_api_version)
       klass.new.install('go-agent', ENV['GO_VERSION'])
+      chmod_R 0o755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
+      sh("export JAVA_VERSION='12' && ./vagrant/provision/filesystem/with-java.sh ./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh agent start")
+      agent_status
     end
 
     task :install_old_version do
@@ -141,7 +146,10 @@ end
       chmod_R 0o755, '/vagrant/provision/filesystem/with-java.sh'
       chmod_R 0o755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
       sh("export JAVA_VERSION='1.8' && ./vagrant/provision/filesystem/with-java.sh ./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh server start")
+      server_status
       klass.new.install('go-agent', ENV['GO_INITIAL_VERSION'])
+      sh("export JAVA_VERSION='1.8' && ./vagrant/provision/filesystem/with-java.sh ./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh agent start")
+      agent_status
     end
 
     def setup_postgres_addon(version)
@@ -162,22 +170,6 @@ end
       sh(%(su - go bash -c 'echo "db.password=postgres"  >> /etc/go/postgresqldb.properties'))
     end
 
-    task :start_agent do
-      chmod_R 0o755, '/vagrant/provision/filesystem/start-stop-gocd-server-agent.sh'
-      if current_gocd_version >= Gem::Version.new('19.4.0')
-        sh("export JAVA_VERSION='12' && ./vagrant/provision/filesystem/with-java.sh ./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh agent start")
-      else
-        sh("export JAVA_VERSION='1.8' && ./vagrant/provision/filesystem/with-java.sh ./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh agent start")
-      end
-    end
-
-    task :check_service_is_up do
-      service_status
-    end
-
-    task :check_service_is_up_again do
-      service_status
-    end
 
     def server_running?
       begin
@@ -203,7 +195,7 @@ end
       end
     end
 
-    def service_status
+    def server_status
       wait_to_start
       pg_connection = 'Using connection configuration jdbc:postgresql://localhost:5432/cruise [User: postgres] [Password Encrypted: false]'
 
@@ -218,22 +210,41 @@ end
           end
         end
       end
+    end
 
+    def agent_status
       puts 'wait for agent to come up'
       v = agent_api_version
       Timeout.timeout(180) do
         loop do
-          sh "curl http://127.0.0.1:8153/go/api/agents -H 'Accept: #{v}' > temp.txt"
-          agents = JSON.parse(File.read('temp.txt'))['_embedded']['agents']
-
-          if agents.any? { |a| a['agent_state'] == 'Idle' }
-            puts 'Agent is up'
-            break
-          end
+          break if agent_running?(v)
           sleep 5
         end
       end
     end
+
+    def agent_running?(v)
+      sh "curl http://127.0.0.1:8153/go/api/agents -H 'Accept: #{v}' > temp.txt"
+      agents = JSON.parse(File.read('temp.txt'))['_embedded']['agents']
+
+      if agents.any? { |a| a['agent_state'] == 'Idle' }
+        puts 'Agent is up'
+        return true
+      end
+      false
+    end
+
+    def agent_any?(v)
+      sh "curl http://127.0.0.1:8153/go/api/agents -H 'Accept: #{v}' > temp.txt"
+      agents = JSON.parse(File.read('temp.txt'))['_embedded']['agents']
+
+      if agents.any? { |a| ['Idle', 'Missing', 'Lost Contact'].include? a['agent_state'] }
+        puts 'Agent is up'
+        return true
+      end
+      false
+    end
+
 
     def create_pipeline
       url = 'http://127.0.0.1:8153/go/api/admin/pipelines'
@@ -371,9 +382,9 @@ end
       versions_map.select { |v| v['gocd_version'] == core }.last['addons']['postgresql']
     end
 
-    task :fresh => [:repo, :install_latest_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :check_pipeline_pass_with_label_1]
-    task :setup => [:repo, :install_old_version, :start_agent, :check_service_is_up, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
-    task :upgrade => [:setup, :install_latest_version, :check_service_is_up_again, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
+    task :fresh => [:repo, :install_latest_version, :create_pipeline_by_config, :check_pipeline_pass_with_label_1]
+    task :setup => [:repo, :install_old_version, :create_pipeline_by_config, :trigger_pipeline_first, :check_pipeline_pass_with_label_1]
+    task :upgrade => [:setup, :install_latest_version, :trigger_pipeline_again, :check_pipeline_pass_with_label_2]
 
     task :upgrade_test do
       upgrade_list = ENV['UPGRADE_VERSIONS_LIST']
@@ -390,13 +401,10 @@ end
           Rake::Task["#{os}:setup"].reenable
           Rake::Task["#{os}:repo"].reenable
           Rake::Task["#{os}:install_old_version"].reenable
-          Rake::Task["#{os}:start_agent"].reenable
-          Rake::Task["#{os}:check_service_is_up"].reenable
           Rake::Task["#{os}:create_pipeline_by_config"].reenable
           Rake::Task["#{os}:trigger_pipeline_first"].reenable
           Rake::Task["#{os}:check_pipeline_pass_with_label_1"].reenable
           Rake::Task["#{os}:install_server"].reenable
-          Rake::Task["#{os}:check_service_is_up_again"].reenable
           Rake::Task["#{os}:trigger_pipeline_again"].reenable
           Rake::Task["#{os}:check_pipeline_pass_with_label_2"].reenable
         end
