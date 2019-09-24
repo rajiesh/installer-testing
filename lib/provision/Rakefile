@@ -128,7 +128,7 @@ end
 
     task :install_agent do
       if agent_any?(agent_api_version)
-        sh('pkill -f go-agent')
+        sh("./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh agent stop")
         upgrade_java
         sh("./vagrant/provision/filesystem/start-stop-gocd-server-agent.sh agent start")
       else
